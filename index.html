@@ -160,27 +160,16 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .lb-pts-big{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.02em;color:var(--navy);line-height:1;}
 .lb-pts-label{font-size:11px;color:var(--gray-400);}
 
-.breakdown-table{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
-.bt-header{display:grid;grid-template-columns:1fr repeat(3,80px);gap:0;background:var(--gray-100);padding:8px 16px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--gray-400);}
-.bt-header span{text-align:right;}
-.bt-header span:first-child{text-align:left;}
-.bt-row{display:grid;grid-template-columns:1fr repeat(3,80px);gap:0;padding:10px 16px;border-bottom:1px solid var(--gray-100);font-size:13px;align-items:center;}
-.bt-row:last-child{border-bottom:none;}
-.bt-row span{text-align:right;font-weight:500;color:var(--gray-600);}
-.bt-row span:first-child{text-align:left;color:var(--gray-900);}
-.bt-row span.pos{color:var(--pitch);font-weight:600;}
-
-/* ── Scores section (inside leaderboard) ── */
-.score-section{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow);}
-.score-section-title{font-weight:700;font-size:14px;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
-.score-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);flex-wrap:wrap;}
-.score-row:last-child{border-bottom:none;}
-.sc-country{flex:1;font-size:14px;font-weight:500;min-width:100px;}
-.sc-input{width:58px;padding:6px 8px;border:1px solid var(--gray-200);border-radius:7px;font-size:16px;text-align:center;font-family:'Inter',sans-serif;outline:none;background:var(--off);}
-.sc-input:focus{border-color:var(--pitch);background:var(--white);}
-.sc-pts{font-size:12px;color:var(--pitch);font-weight:600;min-width:44px;text-align:right;}
-.sc-select{flex:1;min-width:140px;padding:6px 8px;border:1px solid var(--gray-200);border-radius:7px;font-size:16px;font-family:'Inter',sans-serif;outline:none;background:var(--off);}
-.sc-select:focus{border-color:var(--pitch);}
+/* ── Fixtures ── */
+.fx-day{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);margin:1.25rem 0 .5rem;}
+.fx-day:first-child{margin-top:0;}
+.fx-table{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
+.fx-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--gray-100);}
+.fx-row:last-child{border-bottom:none;}
+.fx-time{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.03em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
+.fx-time small{display:block;font-family:'Inter',sans-serif;font-size:10px;color:var(--gray-400);font-weight:600;letter-spacing:.04em;}
+.fx-teams{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--gray-900);}
+.fx-stage{font-size:11px;color:var(--gray-400);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
 
 /* ── API Panel ── */
 .api-card{background:var(--navy-light);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1.25rem;}
@@ -262,16 +251,10 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
   .lb-rank-num{width:28px;height:28px;font-size:12px;}
   .lb-countries{font-size:10px;}
 
-  /* Score entry */
-  .score-section{padding:1rem;}
-  .sc-country{font-size:13px;}
-  .sc-input{width:52px;font-size:14px;}
-  .sc-pts{font-size:11px;min-width:38px;}
-  .sc-select{font-size:12px;}
-
-  /* Breakdown table */
-  .bt-header{grid-template-columns:1fr 36px 52px 52px;padding:8px 10px;font-size:10px;}
-  .bt-row{grid-template-columns:1fr 36px 52px 52px;padding:9px 10px;font-size:12px;}
+  /* Fixtures */
+  .fx-row{padding:10px 12px;gap:10px;}
+  .fx-time{font-size:15px;width:54px;}
+  .fx-teams{font-size:13px;}
 
   /* API card */
   .api-card{padding:1rem;}
@@ -309,6 +292,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
       <button class="nav-btn on" onclick="go('rules')">The Game</button>
       <button class="nav-btn" onclick="go('teams')">Teams</button>
       <button class="nav-btn" onclick="go('board')">Leaderboard</button>
+      <button class="nav-btn" onclick="go('fixtures')">Fixtures</button>
     </div>
   </nav>
 </header>
@@ -424,26 +408,24 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     <div class="empty" style="padding:1.5rem"><div class="empty-icon">🏆</div>Add teams to see the leaderboard.</div>
   </div>
 
-  <!-- Score entry -->
-  <div class="divider"></div>
-  <div class="section-label">Enter scores manually</div>
-
-  <div class="score-section">
-    <div class="score-section-title">
-      <span>Goals per country</span>
-    </div>
-    <div id="goals-list"><div class="empty" style="padding:.5rem 0;font-size:13px">Add teams first.</div></div>
-  </div>
-
-  <div class="score-section">
-    <div class="score-section-title"><span>Stage reached</span></div>
-    <div id="stage-list"><div class="empty" style="padding:.5rem 0;font-size:13px">Add teams first.</div></div>
-  </div>
-
   <div style="display:flex;gap:8px;align-items:center;margin-top:1rem;flex-wrap:wrap;">
     <button class="btn btn-ghost" onclick="renderBoard()">↻ Refresh</button>
     <span style="font-size:12px;color:var(--gray-400)" id="board-sync-label"></span>
   </div>
+</div>
+
+<!-- ══ FIXTURES ══════════════════════════════════════════════ -->
+<div id="fixtures" class="page">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;background:var(--navy-light);border-radius:var(--r);padding:12px 16px;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="sync-dot" id="fx-sync-dot"></div>
+      <span style="font-size:13px;color:rgba(255,255,255,.7);" id="fx-sync-label">Loading fixtures…</span>
+    </div>
+    <span style="font-size:11px;color:rgba(255,255,255,.4)" id="fx-tz-label"></span>
+  </div>
+
+  <div id="fixtures-list"></div>
 </div>
 
 </main>
@@ -468,6 +450,12 @@ const TIERS=[
 
 const FLAGS={'France':'🇫🇷','Spain':'🇪🇸','Argentina':'🇦🇷','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Portugal':'🇵🇹','Brazil':'🇧🇷','Netherlands':'🇳🇱','Germany':'🇩🇪','Morocco':'🇲🇦','Belgium':'🇧🇪','Colombia':'🇨🇴','Uruguay':'🇺🇾','Senegal':'🇸🇳','Japan':'🇯🇵','Norway':'🇳🇴','Mexico':'🇲🇽','USA':'🇺🇸','Canada':'🇨🇦','Korea Republic':'🇰🇷','Ecuador':'🇪🇨','Switzerland':'🇨🇭','Croatia':'🇭🇷','Türkiye':'🇹🇷','Austria':'🇦🇹','Algeria':'🇩🇿','Ivory Coast':"🇨🇮",'Australia':'🇦🇺','Sweden':'🇸🇪','Egypt':'🇪🇬','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Czechia':'🇨🇿','Bosnia':'🇧🇦','Tunisia':'🇹🇳','Paraguay':'🇵🇾','Ghana':'🇬🇭','Saudi Arabia':'🇸🇦','South Africa':'🇿🇦','Iraq':'🇮🇶','Panama':'🇵🇦','Iran':'🇮🇷','Qatar':'🇶🇦','Jordan':'🇯🇴','Uzbekistan':'🇺🇿','Congo DR':'🇨🇩','New Zealand':'🇳🇿','Cabo Verde':'🇨🇻','Curaçao':'🇨🇼','Haiti':'🇭🇹'};
 
+// Flags keyed on the API's own team names (which differ slightly from the tier list above)
+const FLAGS_API={'Bosnia and Herzegovina':'🇧🇦','Cape Verde':'🇨🇻','Czech Republic':'🇨🇿','Democratic Republic of the Congo':'🇨🇩','South Korea':'🇰🇷','Turkey':'🇹🇷','United States':'🇺🇸'};
+function flagFor(name){ return FLAGS_API[name] || FLAGS[name] || ''; }
+
+const STAGE_LABELS={group:'Group stage',r32:'Round of 32',r16:'Round of 16',qf:'Quarter-final',sf:'Semi-final',third:'Third place',final:'Final'};
+
 function tierOf(country){for(let i=0;i<TIERS.length;i++)if(TIERS[i].teams.includes(country))return i;return -1;}
 
 // ── State ─────────────────────────────────────────────────
@@ -488,7 +476,7 @@ let S={
   bonuses:{},
   overrides:{}
 };
-let tok='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjlkZDY1OWFkMDI4MjY1YjE4NjhhZSIsImlhdCI6MTc4MTEyODU1MCwiZXhwIjoxNzg4Mzg2MTUwfQ.DM3ptWr9V5RJDpH8Jokr9uqxdIZjFjdW8ageq9Or-aw', lastSync=null, syncing=false;
+let tok='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjlkZDY1OWFkMDI4MjY1YjE4NjhhZSIsImlhdCI6MTc4MTEyODU1MCwiZXhwIjoxNzg4Mzg2MTUwfQ.DM3ptWr9V5RJDpH8Jokr9uqxdIZjFjdW8ageq9Or-aw', lastSync=null, syncing=false, gamesCache=[];
 
 // ── Persist ───────────────────────────────────────────────
 function save(){ try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){} }
@@ -511,8 +499,9 @@ function go(id){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   document.querySelector(`.nav-btn[onclick="go('${id}')"]`).classList.add('on');
-  if(id==='board'){ renderScoreEntries(); renderBoard(); restoreApiUI(); }
+  if(id==='board'){ renderBoard(); restoreApiUI(); }
   if(id==='teams'){ renderSquads(); }
+  if(id==='fixtures'){ renderFixtures(); }
 }
 
 // ── Teams edit ────────────────────────────────────────────
@@ -630,69 +619,7 @@ function renderBoard(){
     </div>`;
   }).join('');
 
-  // Breakdown table
-  const existing=document.getElementById('breakdown-section');
-  if(existing) existing.remove();
-  if(ranked.length>0){
-    const allC=[...new Set(S.players.flatMap(p=>(p.countries||[]).filter(Boolean)))];
-    const bSection=document.createElement('div');
-    bSection.id='breakdown-section';
-    bSection.innerHTML=`
-      <div class="divider"></div>
-      <div class="section-label">Country breakdown</div>
-      <div class="breakdown-table">
-        <div class="bt-header"><span>Country</span><span>Goals</span><span>Stage</span><span>Total</span></div>
-        ${allC.map(c=>`<div class="bt-row">
-          <span>${c}</span>
-          <span>${S.goals[c]||0}</span>
-          <span class="pos">${S.bonuses[c]?'+'+BONUS[S.bonuses[c]]:''}</span>
-          <span class="pos">${countryPts(c)}</span>
-        </div>`).join('')}
-      </div>`;
-    document.getElementById('board-sync-label').parentElement.before(bSection);
-  }
-
   if(lastSync) document.getElementById('board-sync-label').textContent='Last sync: '+lastSync.toLocaleTimeString();
-}
-
-// ── Score entry ───────────────────────────────────────────
-function renderScoreEntries(){
-  const cs=allCountries();
-  if(!cs.length){
-    document.getElementById('goals-list').innerHTML='<div class="empty" style="padding:.5rem 0;font-size:13px">Add teams first.</div>';
-    document.getElementById('stage-list').innerHTML='<div class="empty" style="padding:.5rem 0;font-size:13px">Add teams first.</div>';
-    return;
-  }
-  cs.forEach(c=>{if(S.goals[c]==null)S.goals[c]=0;});
-  document.getElementById('goals-list').innerHTML=cs.map(c=>`
-    <div class="score-row">
-      <span class="sc-country">${c}</span>
-      <input class="sc-input" type="number" min="0" step="1" value="${S.goals[c]||0}"
-        onchange="setGoal('${safeK(c)}','${c}',this.value)"
-        aria-label="Goals for ${c}"/>
-      <span class="sc-pts" id="spt-${safeK(c)}">${(S.goals[c]||0)*GOAL_PTS} pts</span>
-    </div>`).join('');
-  document.getElementById('stage-list').innerHTML=cs.map(c=>`
-    <div class="score-row">
-      <span class="sc-country">${c}</span>
-      <select class="sc-select" onchange="setBonus('${c}',this.value)" aria-label="Stage for ${c}">
-        <option value="">Group stage (no bonus)</option>
-        ${STAGES.map(s=>`<option value="${s}"${S.bonuses[c]===s?' selected':''}>${s} (+${BONUS[s]} pts)</option>`).join('')}
-      </select>
-    </div>`).join('');
-}
-
-function safeK(s){return s.replace(/[^a-zA-Z0-9]/g,'_');}
-function setGoal(id,country,val){
-  S.goals[country]=Math.max(0,parseInt(val)||0);
-  S.overrides[country]=true;
-  const el=document.getElementById('spt-'+id);
-  if(el) el.textContent=S.goals[country]*GOAL_PTS+' pts';
-  save(); renderBoard(); renderSquads();
-}
-function setBonus(country,val){
-  S.bonuses[country]=val; S.overrides[country]=true;
-  save(); renderBoard(); renderSquads();
 }
 
 // ── API ───────────────────────────────────────────────────
@@ -711,13 +638,15 @@ async function syncNow(){
     if(!res.ok) throw new Error(`API ${res.status}`);
     const data=await res.json();
     const games=Array.isArray(data)?data:(data.data||data.matches||data.games||[]);
+    gamesCache=games;
     applyGames(games);
     lastSync=new Date();
     if(dot) dot.className='sync-dot live';
     if(lbl) lbl.textContent='Live · last updated '+lastSync.toLocaleTimeString();
     if(document.getElementById('board-sync-label'))
       document.getElementById('board-sync-label').textContent='Last sync: '+lastSync.toLocaleTimeString();
-    save(); renderScoreEntries(); renderBoard(); renderSquads();
+    save(); renderBoard(); renderSquads();
+    if(document.getElementById('fixtures').classList.contains('on')) renderFixtures();
   }catch(e){
     if(dot) dot.className='sync-dot';
     if(lbl) lbl.textContent='Sync failed — '+e.message;
@@ -740,7 +669,6 @@ function applyGames(games){
     }
   });
   allCountries().forEach(c=>{
-    if(S.overrides[c]) return;
     const g=fuzzy(goalMap,c); if(g!=null) S.goals[c]=g;
     const st=fuzzy(stageMap,c); if(st) S.bonuses[c]=st;
   });
@@ -764,6 +692,75 @@ function fuzzy(map,name){
     if(k.toLowerCase()===nl||k.toLowerCase().includes(nl)||nl.includes(k.toLowerCase())) return map[k];
   }
   return null;
+}
+
+// ── Fixtures ──────────────────────────────────────────────
+// API local_date/persian_date are given in Iran time (UTC+3:30, no DST)
+const TEHRAN_OFFSET_MS=3.5*60*60*1000;
+function tehranToDate(localDateStr){
+  const [datePart,timePart]=localDateStr.split(' ');
+  const [mm,dd,yyyy]=datePart.split('/').map(Number);
+  const [hh,min]=(timePart||'0:0').split(':').map(Number);
+  return new Date(Date.UTC(yyyy,mm-1,dd,hh,min)-TEHRAN_OFFSET_MS);
+}
+
+async function renderFixtures(){
+  const dot=document.getElementById('fx-sync-dot');
+  const lbl=document.getElementById('fx-sync-label');
+  const tzLbl=document.getElementById('fx-tz-label');
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if(tzLbl) tzLbl.textContent='Times shown in '+tz.replace(/_/g,' ');
+
+  if(!gamesCache.length){
+    if(lbl) lbl.textContent='Loading fixtures…';
+    try{
+      const res=await fetch(`${API}/get/games`,{headers:{Authorization:`Bearer ${tok}`}});
+      if(!res.ok) throw new Error(`API ${res.status}`);
+      const data=await res.json();
+      gamesCache=Array.isArray(data)?data:(data.data||data.matches||data.games||[]);
+    }catch(e){
+      if(dot) dot.className='sync-dot';
+      if(lbl) lbl.textContent='Could not load fixtures — '+e.message;
+      document.getElementById('fixtures-list').innerHTML='';
+      return;
+    }
+  }
+
+  const upcoming=gamesCache
+    .filter(g=>String(g.finished).toUpperCase()!=='TRUE')
+    .map(g=>({...g, kickoff:tehranToDate(g.local_date)}))
+    .sort((a,b)=>a.kickoff-b.kickoff);
+
+  if(dot) dot.className='sync-dot live';
+  if(lbl) lbl.textContent=upcoming.length+' upcoming match'+(upcoming.length===1?'':'es');
+
+  if(!upcoming.length){
+    document.getElementById('fixtures-list').innerHTML='<div class="empty"><div class="empty-icon">⚽</div>No upcoming fixtures.</div>';
+    return;
+  }
+
+  let html='', lastDay='';
+  upcoming.forEach(g=>{
+    const day=g.kickoff.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+    if(day!==lastDay){
+      if(lastDay) html+='</div>';
+      html+=`<div class="fx-day">${day}</div><div class="fx-table">`;
+      lastDay=day;
+    }
+    const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    const home=g.home_team_name_en||g.home_team_en||g.home_team||'TBD';
+    const away=g.away_team_name_en||g.away_team_en||g.away_team||'TBD';
+    const stage=STAGE_LABELS[g.type]||g.type||'';
+    html+=`<div class="fx-row">
+      <div class="fx-time">${time}</div>
+      <div class="fx-teams">
+        ${flagFor(home)} ${home} <span style="color:var(--gray-400);font-weight:400">vs</span> ${away} ${flagFor(away)}
+        <div class="fx-stage">${stage}${g.group?' · Group '+g.group:''}</div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('fixtures-list').innerHTML=html;
 }
 
 // ── Init ──────────────────────────────────────────────────

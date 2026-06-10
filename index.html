@@ -435,9 +435,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 const GOAL_PTS=5;
 const BONUS={'Last 32':5,'Last 16':8,'Quarter-final':10,'Final':12,'Winner':15};
 const STAGES=['Last 32','Last 16','Quarter-final','Final','Winner'];
-const API='https://worldcup26.ir';
+const API='/api/games';
 const LS='wc26_v2';
-const LS_TOK='wc26_tok'; // token hard-coded, not needed
 
 // ── Tier data (locked) ────────────────────────────────────
 const TIERS=[
@@ -476,7 +475,7 @@ let S={
   bonuses:{},
   overrides:{}
 };
-let tok='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMjlkZDY1OWFkMDI4MjY1YjE4NjhhZSIsImlhdCI6MTc4MTEyODU1MCwiZXhwIjoxNzg4Mzg2MTUwfQ.DM3ptWr9V5RJDpH8Jokr9uqxdIZjFjdW8ageq9Or-aw', lastSync=null, syncing=false, gamesCache=[];
+let lastSync=null, syncing=false, gamesCache=[];
 
 // ── Persist ───────────────────────────────────────────────
 function save(){ try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){} }
@@ -489,7 +488,6 @@ function load(){
       // ensure 10 players always exist
       while(S.players.length<10) S.players.push({name:'Player '+(S.players.length+1),countries:[]});
     }
-    const t=localStorage.getItem(LS_TOK); if(t) tok=t;
   }catch(e){}
 }
 
@@ -627,14 +625,14 @@ function restoreApiUI(){ if(lastSync) document.getElementById('sync-label').text
 
 
 async function syncNow(){
-  if(!tok||syncing) return;
+  if(syncing) return;
   syncing=true;
   const dot=document.getElementById('sync-dot');
   const lbl=document.getElementById('sync-label');
   if(dot) dot.className='sync-dot spin';
   if(lbl) lbl.textContent='Syncing…';
   try{
-    const res=await fetch(`${API}/get/games`,{headers:{Authorization:`Bearer ${tok}`}});
+    const res=await fetch(API);
     if(!res.ok) throw new Error(`API ${res.status}`);
     const data=await res.json();
     const games=Array.isArray(data)?data:(data.data||data.matches||data.games||[]);
@@ -714,7 +712,7 @@ async function renderFixtures(){
   if(!gamesCache.length){
     if(lbl) lbl.textContent='Loading fixtures…';
     try{
-      const res=await fetch(`${API}/get/games`,{headers:{Authorization:`Bearer ${tok}`}});
+      const res=await fetch(API);
       if(!res.ok) throw new Error(`API ${res.status}`);
       const data=await res.json();
       gamesCache=Array.isArray(data)?data:(data.data||data.matches||data.games||[]);

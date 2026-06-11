@@ -126,19 +126,6 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .country-name-text{font-size:13px;font-weight:500;color:var(--gray-900);flex:1;}
 .country-pts{font-size:12px;font-weight:600;color:var(--pitch);}
 
-/* Edit mode */
-.edit-panel{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow);display:none;}
-.edit-panel.open{display:block;}
-.edit-title{font-weight:600;font-size:14px;margin-bottom:1rem;color:var(--navy);}
-.edit-player-block{margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--gray-100);}
-.edit-player-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-.edit-player-name{font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
-.edit-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.field-wrap{display:flex;flex-direction:column;gap:4px;}
-.field-wrap label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-400);}
-.field-wrap input{padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:16px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;}
-.field-wrap input:focus{border-color:var(--pitch);}
-
 /* ── LEADERBOARD ── */
 .lb-hero{background:var(--navy);border-radius:var(--r);padding:1.5rem 1.75rem;margin-bottom:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;overflow:hidden;}
 .lb-hero::before{content:'';position:absolute;bottom:-30px;right:-30px;width:160px;height:160px;border-radius:50%;border:1.5px solid rgba(245,197,24,.1);}
@@ -278,10 +265,6 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
   .api-card{padding:1rem;}
   .api-row input{min-width:0;font-size:13px;}
 
-  /* Edit panel */
-  .edit-fields{grid-template-columns:1fr;}
-  .edit-panel{padding:1rem;}
-
   /* Buttons */
   .btn{padding:10px 16px;font-size:14px;}
   .btn-sm{padding:8px 14px;font-size:13px;}
@@ -379,17 +362,6 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 
   <div class="setup-bar">
     <h2>The Squads</h2>
-    <button class="btn btn-ghost btn-sm" onclick="toggleEdit()">✏️ Edit players</button>
-  </div>
-
-  <!-- Edit panel -->
-  <div class="edit-panel" id="edit-panel">
-    <div class="edit-title">Enter the 10 player names</div>
-    <div id="edit-blocks"></div>
-    <div class="btn-row" style="margin-top:1rem;">
-      <button class="btn btn-navy btn-sm" onclick="saveEdit()">Save</button>
-      <button class="btn btn-ghost btn-sm" onclick="toggleEdit()">Cancel</button>
-    </div>
   </div>
 
   <div id="squad-grid" class="squad-grid"></div>
@@ -492,16 +464,16 @@ function tierOf(country){for(let i=0;i<TIERS.length;i++)if(TIERS[i].teams.includ
 // ── State ─────────────────────────────────────────────────
 let S={
   players:[
-    {name:'Player 1',countries:['France','Colombia','Switzerland','Czechia','Qatar']},
-    {name:'Player 2',countries:['Spain','Uruguay','Croatia','Bosnia','Jordan']},
-    {name:'Player 3',countries:['Argentina','Senegal','Türkiye','Tunisia','Uzbekistan']},
-    {name:'Player 4',countries:['England','Japan','Austria','Paraguay','Congo DR']},
-    {name:'Player 5',countries:['Portugal','Norway','Algeria','Ghana','New Zealand']},
-    {name:'Player 6',countries:['Brazil','Mexico','Ivory Coast','Saudi Arabia','Cabo Verde']},
-    {name:'Player 7',countries:['Netherlands','USA','Australia','South Africa','Curaçao']},
-    {name:'Player 8',countries:['Germany','Canada','Sweden','Iraq','Haiti']},
-    {name:'Player 9',countries:['Morocco','Korea Republic','Egypt','Panama','Jordan']},
-    {name:'Player 10',countries:['Belgium','Ecuador','Scotland','Iran','Qatar']}
+    {name:'Ioannis',countries:['France','Colombia','Switzerland','Czechia','Qatar']},
+    {name:'Vassilis',countries:['Spain','Uruguay','Croatia','Bosnia','Jordan']},
+    {name:'Safak',countries:['Argentina','Senegal','Türkiye','Tunisia','Uzbekistan']},
+    {name:'Alicia',countries:['England','Japan','Austria','Paraguay','Congo DR']},
+    {name:'Katerina',countries:['Portugal','Norway','Algeria','Ghana','New Zealand']},
+    {name:'Melina',countries:['Brazil','Mexico','Ivory Coast','Saudi Arabia','Cabo Verde']},
+    {name:'Guillermo',countries:['Netherlands','USA','Australia','South Africa','Curaçao']},
+    {name:'Vicky',countries:['Germany','Canada','Sweden','Iraq','Haiti']},
+    {name:'Lydia',countries:['Morocco','Korea Republic','Egypt','Panama','Jordan']},
+    {name:'George',countries:['Belgium','Ecuador','Scotland','Iran','Qatar']}
   ],
   goals:{},
   bonuses:{},
@@ -533,34 +505,6 @@ function go(id){
   if(id==='teams'){ renderSquads(); }
   if(id==='fixtures'){ renderFixtures(); }
   if(id==='standings'){ renderStandings(); }
-}
-
-// ── Teams edit ────────────────────────────────────────────
-let editOpen=false;
-function toggleEdit(){
-  editOpen=!editOpen;
-  const panel=document.getElementById('edit-panel');
-  panel.classList.toggle('open',editOpen);
-  if(editOpen) renderEditBlocks();
-}
-
-function renderEditBlocks(){
-  const container=document.getElementById('edit-blocks');
-  container.innerHTML=S.players.map((p,i)=>`
-    <div class="edit-player-block" id="epb-${i}">
-      <div class="edit-player-name"><span>Player ${i+1}</span></div>
-      <div class="edit-fields" style="grid-template-columns:1fr;">
-        <div class="field-wrap"><label>Name</label><input type="text" placeholder="e.g. George" value="${p.name||''}" data-i="${i}"/></div>
-      </div>
-    </div>`).join('');
-}
-
-function saveEdit(){
-  document.querySelectorAll('.edit-player-block').forEach((block,i)=>{
-    const inp=block.querySelector('input[data-i]');
-    if(inp&&inp.value.trim()) S.players[i].name=inp.value.trim();
-  });
-  save(); toggleEdit(); renderSquads();
 }
 
 // ── Render squads ─────────────────────────────────────────

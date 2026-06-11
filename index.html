@@ -280,17 +280,18 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
 <header class="hdr">
   <div class="hdr-inner">
     <div class="hdr-logo"><span class="ball">⚽</span> Sülale WM 2026</div>
-    <div class="hdr-tag">USA · Mexico · Canada 2026</div>
+    <div class="hdr-tag">USA · Mexiko · Kanada 2026</div>
   </div>
   <nav class="nav">
     <div class="nav-inner">
-      <button class="nav-btn on" onclick="go('rules')">The Game</button>
+      <button class="nav-btn on" onclick="go('rules')">Das Spiel</button>
       <button class="nav-btn" onclick="go('teams')">Teams</button>
       <button class="nav-btn" onclick="go('board')">Leaderboard</button>
       <button class="nav-btn" onclick="go('fixtures')">Fixtures</button>
@@ -305,55 +306,55 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 <div id="rules" class="page on">
 
   <div class="programme-header">
-    <div class="prog-eyebrow">Sülale turnuvası · 2026</div>
+    <div class="prog-eyebrow">Sülale Turnier · 2026</div>
     <div class="prog-title">Sülale WM<br>2026</div>
-    <div class="prog-sub">48 teams. 104 matches. Two ways to win.</div>
+    <div class="prog-sub">48 Teams. 104 Spiele. Zwei Wege zum Sieg.</div>
   </div>
 
   <div class="two-prize">
     <div class="prize-card gold-border">
       <div class="prize-icon">🏆</div>
-      <div class="prize-name">World Cup Winner</div>
-      <div class="prize-desc">If your team lifts the trophy on 19 July, you win. Simple as that.</div>
+      <div class="prize-name">WM-Sieger</div>
+      <div class="prize-desc">Wenn dein Team am 19. Juli den Pokal hochhält, gewinnst du. So einfach ist das.</div>
     </div>
     <div class="prize-card green-border">
       <div class="prize-icon">⚽</div>
-      <div class="prize-name">Points Champion</div>
-      <div class="prize-desc">Most points across all your teams, the whole tournament. Every game counts.</div>
+      <div class="prize-name">Punkte-Champion</div>
+      <div class="prize-desc">Die meisten Punkte mit all deinen Teams über das gesamte Turnier. Jedes Spiel zählt.</div>
     </div>
   </div>
 
   <div class="rules-card">
-    <div class="rules-title">How points work</div>
+    <div class="rules-title">So funktionieren die Punkte</div>
     <div class="pts-grid">
-      <div class="pts-row"><div class="pts-label">Each goal scored by your country</div><div class="pts-val"><span class="pill pill-goal">+4 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the last 32</div><div class="pts-val"><span class="pill">+10 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the last 16</div><div class="pts-val"><span class="pill">+6 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the quarter-finals</div><div class="pts-val"><span class="pill">+4 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the final</div><div class="pts-val"><span class="pill">+4 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country wins the World Cup</div><div class="pts-val"><span class="pill">+2 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Jedes Tor deines Landes</div><div class="pts-val"><span class="pill pill-goal">+4 Pkt.</span></div></div>
+      <div class="pts-row"><div class="pts-label">Dein Land erreicht das Sechzehntelfinale</div><div class="pts-val"><span class="pill">+10 Pkt.</span></div></div>
+      <div class="pts-row"><div class="pts-label">Dein Land erreicht das Achtelfinale</div><div class="pts-val"><span class="pill">+6 Pkt.</span></div></div>
+      <div class="pts-row"><div class="pts-label">Dein Land erreicht das Viertelfinale</div><div class="pts-val"><span class="pill">+4 Pkt.</span></div></div>
+      <div class="pts-row"><div class="pts-label">Dein Land erreicht das Finale</div><div class="pts-val"><span class="pill">+4 Pkt.</span></div></div>
+      <div class="pts-row"><div class="pts-label">Dein Land gewinnt die WM</div><div class="pts-val"><span class="pill">+2 Pkt.</span></div></div>
     </div>
     <div style="margin-top:14px;font-size:13px;color:var(--gray-600);line-height:1.6">
-      Each country earns points from goals, plus a stage bonus that stacks up as they progress — each step adds to what came before, so a country that reaches the final has earned 10+6+4+4 = 24 pts in total, and a champion ends up with 10+6+4+4+2 = 26 pts. A team scoring 6 goals earns 24 pts from goals alone, on top of whatever stage bonus it has reached so far. Goals and stage bonuses both update live as the tournament unfolds.
+      Jedes Land sammelt Punkte für Tore, plus einen Phasen-Bonus, der sich mit jedem Fortschritt aufaddiert — jede Stufe kommt zu den vorherigen dazu. Ein Land, das das Finale erreicht, hat also insgesamt 10+6+4+4 = 24 Punkte gesammelt, und ein Weltmeister landet am Ende bei 10+6+4+4+2 = 26 Punkten. Ein Team mit 6 Toren bekommt allein dafür 24 Punkte, zusätzlich zum bisher erreichten Phasen-Bonus. Tore und Phasen-Boni werden live während des Turniers aktualisiert.
     </div>
   </div>
 
   <div class="rules-card">
-    <div class="rules-title">Your teams</div>
+    <div class="rules-title">Deine Teams</div>
     <div style="font-size:14px;color:var(--gray-600);margin-bottom:1rem;line-height:1.6">
-      Everyone drew one country from each tier. The Tier 5 wildcard pool has 8 teams for 10 players — so 2 players draw a second Tier 5 country as their 5th team instead. Everyone ends up with 5 countries.
+      Jeder hat aus jeder Stufe ein Land gezogen. Im Wildcard-Topf (Stufe 5) gibt es nur 8 Teams für 10 Spieler — deshalb ziehen 2 Spieler stattdessen ein zweites Stufe-5-Land als ihr 5. Team. Am Ende hat jeder 5 Länder.
     </div>
     <div class="tier-explainer">
       <div class="tier-chip tc1"><div class="t-num">T1</div><div class="t-label">Elite</div></div>
-      <div class="tier-chip tc2"><div class="t-num">T2</div><div class="t-label">Contenders</div></div>
-      <div class="tier-chip tc3"><div class="t-num">T3</div><div class="t-label">Hopefuls</div></div>
-      <div class="tier-chip tc4"><div class="t-num">T4</div><div class="t-label">Dark horses</div></div>
+      <div class="tier-chip tc2"><div class="t-num">T2</div><div class="t-label">Anwärter</div></div>
+      <div class="tier-chip tc3"><div class="t-num">T3</div><div class="t-label">Hoffnungsträger</div></div>
+      <div class="tier-chip tc4"><div class="t-num">T4</div><div class="t-label">Außenseiter</div></div>
       <div class="tier-chip tc5"><div class="t-num">T5</div><div class="t-label">Wildcards</div></div>
     </div>
   </div>
 
   <div style="text-align:center;margin-top:1.5rem;">
-    <button class="btn btn-navy" onclick="go('teams')">See who has who →</button>
+    <button class="btn btn-navy" onclick="go('teams')">Wer hat wen? →</button>
   </div>
 </div>
 

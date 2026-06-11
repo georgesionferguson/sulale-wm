@@ -488,9 +488,10 @@ function load(){
     const raw=localStorage.getItem(LS);
     if(raw){
       const p=JSON.parse(raw);
-      S=Object.assign({players:[],goals:{},bonuses:{},overrides:{}},p);
-      // ensure 10 players always exist
-      while(S.players.length<10) S.players.push({name:'Player '+(S.players.length+1),countries:[]});
+      // players/squads are fixed in code; only restore live results
+      S.goals=p.goals||{};
+      S.bonuses=p.bonuses||{};
+      S.overrides=p.overrides||{};
     }
   }catch(e){}
 }

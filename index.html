@@ -515,6 +515,7 @@ function go(id){
   if(id==='teams'){ renderSquads(); }
   if(id==='fixtures'){ renderFixtures(); }
   if(id==='standings'){ renderStandings(); }
+  try{ localStorage.setItem('sulale_tab', id); }catch(e){}
 }
 
 // ── Render squads ─────────────────────────────────────────
@@ -933,6 +934,10 @@ document.addEventListener('visibilitychange',()=>{
 // ── Init ──────────────────────────────────────────────────
 load();
 renderSquads();
+try{
+  const savedTab=localStorage.getItem('sulale_tab');
+  if(savedTab && document.getElementById(savedTab)) go(savedTab);
+}catch(e){}
 setTimeout(async()=>{ await syncNow(); scheduleSync(); },1000);
 </script>
 </body>

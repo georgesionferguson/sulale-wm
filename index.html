@@ -163,12 +163,19 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .fx-day{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);margin:1.25rem 0 .5rem;}
 .fx-day:first-child{margin-top:0;}
 .fx-table{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
-.fx-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--gray-100);}
+.fx-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--gray-100);border-left:4px solid transparent;}
 .fx-row:last-child{border-bottom:none;}
+.fx-row.fx-england{border-left-color:#c8102e;background:#fdf2f3;}
+.fx-row.fx-germany{border-left-color:#f5c518;background:#fdfaeb;}
+.fx-row.fx-turkey{border-left-color:#1d4ed8;background:#eff4fe;}
 .fx-time{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.03em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
 .fx-time small{display:block;font-family:'Inter',sans-serif;font-size:10px;color:var(--gray-400);font-weight:600;letter-spacing:.04em;}
+.fx-score{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
 .fx-teams{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--gray-900);}
 .fx-stage{font-size:11px;color:var(--gray-400);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+.fx-live{display:inline-flex;align-items:center;gap:4px;color:#16a34a;font-weight:700;margin-right:6px;}
+.fx-live .live-dot{width:6px;height:6px;border-radius:50%;background:#16a34a;animation:blink 1s infinite;}
+.fx-ft{color:var(--gray-400);font-weight:700;margin-right:6px;}
 
 /* ── API Panel ── */
 .api-card{background:var(--navy-light);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1.25rem;}
@@ -738,20 +745,57 @@ async function renderFixtures(){
     return;
   }
 
-  const upcoming=gamesCache
-    .filter(g=>String(g.finished).toUpperCase()!=='TRUE')
-    .map(g=>({...g, kickoff:fixtureLocalToDate(g)}))
-    .sort((a,b)=>a.kickoff-b.kickoff);
+  const now=new Date();
+  const all=gamesCache.map(g=>({...g, kickoff:fixtureLocalToDate(g)}));
+  const isFinished=g=>String(g.finished).toUpperCase()==='TRUE';
+  const live=all.filter(g=>!isFinished(g)&&g.kickoff<=now).sort((a,b)=>a.kickoff-b.kickoff);
+  const upcoming=all.filter(g=>!isFinished(g)&&g.kickoff>now).sort((a,b)=>a.kickoff-b.kickoff);
+  const finished=all.filter(isFinished).sort((a,b)=>b.kickoff-a.kickoff);
 
   if(dot) dot.className='sync-dot live';
-  if(lbl) lbl.textContent=upcoming.length+' upcoming match'+(upcoming.length===1?'':'es');
+  if(lbl) lbl.textContent=(live.length?live.length+' live · ':'')+upcoming.length+' upcoming match'+(upcoming.length===1?'':'es');
 
-  if(!upcoming.length){
-    document.getElementById('fixtures-list').innerHTML='<div class="empty"><div class="empty-icon">⚽</div>No upcoming fixtures.</div>';
+  if(!live.length&&!upcoming.length&&!finished.length){
+    document.getElementById('fixtures-list').innerHTML='<div class="empty"><div class="empty-icon">⚽</div>No fixtures.</div>';
     return;
   }
 
-  let html='', lastDay='';
+  function fxRow(g,{score}={}){
+    const home=g.home_team_name_en||g.home_team_en||g.home_team||'TBD';
+    const away=g.away_team_name_en||g.away_team_en||g.away_team||'TBD';
+    const stage=STAGE_LABELS[g.type]||g.type||'';
+    const stadium=STADIUM_INFO[Number(g.stadium_id)];
+    const venue=stadium?stadium.name+', '+stadium.city:'';
+    let leftCol, badge='';
+    if(score==='live'){
+      leftCol=`<div class="fx-score">${g.home_score}–${g.away_score}</div>`;
+      badge='<span class="fx-live"><span class="live-dot"></span>LIVE</span>';
+    }else if(score==='final'){
+      leftCol=`<div class="fx-score">${g.home_score}–${g.away_score}</div>`;
+      badge='<span class="fx-ft">FT</span>';
+    }else{
+      const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      leftCol=`<div class="fx-time">${time}</div>`;
+    }
+    const HIGHLIGHT_TEAMS={'England':'fx-england','Germany':'fx-germany','Türkiye':'fx-turkey'};
+    const highlight=HIGHLIGHT_TEAMS[home]||HIGHLIGHT_TEAMS[away]||'';
+    return `<div class="fx-row${highlight?' '+highlight:''}">
+      ${leftCol}
+      <div class="fx-teams">
+        ${flagFor(home)} ${home} <span style="color:var(--gray-400);font-weight:400">vs</span> ${away} ${flagFor(away)}
+        <div class="fx-stage">${badge}${stage}${g.group?' · Group '+g.group:''}${venue?' · '+venue:''}</div>
+      </div>
+    </div>`;
+  }
+
+  let html='';
+  if(live.length){
+    html+='<div class="fx-day">Live now</div><div class="fx-table">';
+    live.forEach(g=>html+=fxRow(g,{score:'live'}));
+    html+='</div>';
+  }
+
+  let lastDay='';
   upcoming.forEach(g=>{
     const day=g.kickoff.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
     if(day!==lastDay){
@@ -759,21 +803,16 @@ async function renderFixtures(){
       html+=`<div class="fx-day">${day}</div><div class="fx-table">`;
       lastDay=day;
     }
-    const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-    const home=g.home_team_name_en||g.home_team_en||g.home_team||'TBD';
-    const away=g.away_team_name_en||g.away_team_en||g.away_team||'TBD';
-    const stage=STAGE_LABELS[g.type]||g.type||'';
-    const stadium=STADIUM_INFO[Number(g.stadium_id)];
-    const venue=stadium?stadium.name+', '+stadium.city:'';
-    html+=`<div class="fx-row">
-      <div class="fx-time">${time}</div>
-      <div class="fx-teams">
-        ${flagFor(home)} ${home} <span style="color:var(--gray-400);font-weight:400">vs</span> ${away} ${flagFor(away)}
-        <div class="fx-stage">${stage}${g.group?' · Group '+g.group:''}${venue?' · '+venue:''}</div>
-      </div>
-    </div>`;
+    html+=fxRow(g);
   });
-  html+='</div>';
+  if(lastDay) html+='</div>';
+
+  if(finished.length){
+    html+='<div class="fx-day">Results</div><div class="fx-table">';
+    finished.forEach(g=>html+=fxRow(g,{score:'final'}));
+    html+='</div>';
+  }
+
   document.getElementById('fixtures-list').innerHTML=html;
 }
 

@@ -676,7 +676,9 @@ function inferStage(t){
   if(s==='r32'||s.includes('32')) return 'Last 32';
   return null;
 }
+const TEAM_ALIASES={'South Korea':'Korea Republic','United States':'USA','Czech Republic':'Czechia','Bosnia and Herzegovina':'Bosnia','Cape Verde':'Cabo Verde','Democratic Republic of the Congo':'Congo DR',"Côte d'Ivoire":'Ivory Coast','Turkey':'Türkiye'};
 function fuzzy(map,name){
+  name=TEAM_ALIASES[name]||name;
   if(map[name]!==undefined) return map[name];
   const nl=name.toLowerCase();
   for(const k in map){

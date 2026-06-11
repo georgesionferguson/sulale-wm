@@ -342,12 +342,12 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
   <div class="rules-card">
     <div class="rules-title">How points work</div>
     <div class="pts-grid">
-      <div class="pts-row"><div class="pts-label">Each goal scored by your country</div><div class="pts-val"><span class="pill">+5 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the last 32</div><div class="pts-val"><span class="pill">+5 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the last 16</div><div class="pts-val"><span class="pill">+8 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the quarter-finals</div><div class="pts-val"><span class="pill">+10 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country reaches the final</div><div class="pts-val"><span class="pill">+12 pts</span></div></div>
-      <div class="pts-row"><div class="pts-label">Your country wins the World Cup</div><div class="pts-val"><span class="pill">+15 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Each goal scored by your country</div><div class="pts-val"><span class="pill">+4 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Your country reaches the last 32</div><div class="pts-val"><span class="pill">+10 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Your country reaches the last 16</div><div class="pts-val"><span class="pill">+16 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Your country reaches the quarter-finals</div><div class="pts-val"><span class="pill">+20 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Your country reaches the final</div><div class="pts-val"><span class="pill">+24 pts</span></div></div>
+      <div class="pts-row"><div class="pts-label">Your country wins the World Cup</div><div class="pts-val"><span class="pill">+26 pts</span></div></div>
     </div>
     <div style="margin-top:14px;font-size:13px;color:var(--gray-600);line-height:1.6">
       Each country earns points from goals plus one bonus for the furthest stage they reach — not cumulative. A team scoring 6 goals earns 30 pts regardless of how far they go. Goals matter from game one.
@@ -463,8 +463,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 
 <script>
 // ── Constants ─────────────────────────────────────────────
-const GOAL_PTS=5;
-const BONUS={'Last 32':5,'Last 16':8,'Quarter-final':10,'Final':12,'Winner':15};
+const GOAL_PTS=4;
+const BONUS={'Last 32':10,'Last 16':16,'Quarter-final':20,'Final':24,'Winner':26};
 const STAGES=['Last 32','Last 16','Quarter-final','Final','Winner'];
 const API='/api/games';
 const LS='wc26_v2';
@@ -687,7 +687,6 @@ function applyGames(games){
   const goalMap={}, stageMap={};
   const stageOrder=['Last 32','Last 16','Quarter-final','Final','Winner'];
   games.forEach(g=>{
-    if(!g.finished) return;
     const h=g.home_team_en||g.home_team_name||g.home_team||null;
     const a=g.away_team_en||g.away_team_name||g.away_team||null;
     if(h) goalMap[h]=(goalMap[h]||0)+(parseInt(g.home_score)||0);
@@ -697,6 +696,12 @@ function applyGames(games){
       if(h&&(!stageMap[h]||stageOrder.indexOf(st)>stageOrder.indexOf(stageMap[h]))) stageMap[h]=st;
       if(a&&(!stageMap[a]||stageOrder.indexOf(st)>stageOrder.indexOf(stageMap[a]))) stageMap[a]=st;
     }
+    // Winner tier on top of 'Final' once the final has been played
+    if(g.type==='final'&&String(g.finished).toUpperCase()==='TRUE'){
+      const hs=parseInt(g.home_score)||0, as=parseInt(g.away_score)||0;
+      if(hs>as&&h) stageMap[h]='Winner';
+      else if(as>hs&&a) stageMap[a]='Winner';
+    }
   });
   allCountries().forEach(c=>{
     const g=fuzzy(goalMap,c); if(g!=null) S.goals[c]=g;
@@ -705,14 +710,15 @@ function applyGames(games){
   // also sync renderSquads so pts update
   renderSquads();
 }
+// Bonuses accrue as a country progresses — each tier's value already
+// includes everything from the tiers below it (cumulative).
 function inferStage(t){
   const s=t.toLowerCase();
-  if(s.includes('winner')||s.includes('champion')) return 'Winner';
-  if(s.includes('final')&&!s.includes('quarter')&&!s.includes('semi')) return 'Final';
-  if(s.includes('semi')) return 'Final';
-  if(s.includes('quarter')) return 'Quarter-final';
-  if(s.includes('16')||s.includes('r16')||s.includes('round_of_16')) return 'Last 16';
-  if(s.includes('32')||s.includes('r32')||s.includes('round_of_32')) return 'Last 32';
+  if(s==='final'||s.includes('final')) return 'Final';
+  if(s==='sf'||s.includes('semi')) return 'Quarter-final';
+  if(s==='qf'||s.includes('quarter')) return 'Quarter-final';
+  if(s==='r16'||s.includes('16')) return 'Last 16';
+  if(s==='r32'||s.includes('32')) return 'Last 32';
   return null;
 }
 function fuzzy(map,name){

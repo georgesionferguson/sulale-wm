@@ -1,0 +1,13 @@
+{
+  "name": "sulale-wm",
+  "version": "1.0.0",
+  "description": "Sülale WM 2026 - World Cup Prediction Game",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Build completed'",
+    "test": "echo 'No tests configured'"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}

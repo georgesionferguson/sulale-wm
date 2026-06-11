@@ -473,16 +473,16 @@ function tierOf(country){for(let i=0;i<TIERS.length;i++)if(TIERS[i].teams.includ
 // ── State ─────────────────────────────────────────────────
 let S={
   players:[
-    {name:'Ioannis',countries:['France','Colombia','Switzerland','Czechia','Qatar']},
-    {name:'Vassilis',countries:['Spain','Uruguay','Croatia','Bosnia','Jordan']},
-    {name:'Safak',countries:['Argentina','Senegal','Türkiye','Tunisia','Uzbekistan']},
-    {name:'Alicia',countries:['England','Japan','Austria','Paraguay','Congo DR']},
-    {name:'Katerina',countries:['Portugal','Norway','Algeria','Ghana','New Zealand']},
-    {name:'Melina',countries:['Brazil','Mexico','Ivory Coast','Saudi Arabia','Cabo Verde']},
-    {name:'Guillermo',countries:['Netherlands','USA','Australia','South Africa','Curaçao']},
-    {name:'Vicky',countries:['Germany','Canada','Sweden','Iraq','Haiti']},
-    {name:'Lydia',countries:['Morocco','Korea Republic','Egypt','Panama','Jordan']},
-    {name:'George',countries:['Belgium','Ecuador','Scotland','Iran','Qatar']}
+    {name:'Ioannis',color:'#1d4ed8',countries:['France','Colombia','Switzerland','Czechia','Qatar']},
+    {name:'Vassilis',color:'#dc2626',countries:['Spain','Uruguay','Croatia','Bosnia','Jordan']},
+    {name:'Safak',color:'#059669',countries:['Argentina','Senegal','Türkiye','Tunisia','Uzbekistan']},
+    {name:'Alicia',color:'#7c3aed',countries:['England','Japan','Austria','Paraguay','Congo DR']},
+    {name:'Katerina',color:'#d97706',countries:['Portugal','Norway','Algeria','Ghana','New Zealand']},
+    {name:'Melina',color:'#db2777',countries:['Brazil','Mexico','Ivory Coast','Saudi Arabia','Cabo Verde']},
+    {name:'Guillermo',color:'#0891b2',countries:['Netherlands','USA','Australia','South Africa','Curaçao']},
+    {name:'Vicky',color:'#ca8a04',countries:['Germany','Canada','Sweden','Iraq','Haiti']},
+    {name:'Lydia',color:'#65a30d',countries:['Morocco','Korea Republic','Egypt','Panama','Jordan']},
+    {name:'George',color:'#4338ca',countries:['Belgium','Ecuador','Scotland','Iran','Qatar']}
   ],
   goals:{},
   bonuses:{},
@@ -520,6 +520,14 @@ function go(id){
 // ── Render squads ─────────────────────────────────────────
 function allCountries(){
   return S.players.flatMap(p=>(p.countries||[]).filter(Boolean));
+}
+
+function highlightMap(){
+  const colors={}, owners={};
+  S.players.forEach(p=>{
+    (p.countries||[]).forEach(c=>{ colors[c]=p.color; owners[c]=p.name; });
+  });
+  return {colors, owners};
 }
 
 function countryPts(c){
@@ -780,23 +788,22 @@ async function renderFixtures(){
       const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       leftCol=`<div class="fx-time">${time}</div>`;
     }
-    const HIGHLIGHT_COLORS={'England':'#1d4ed8','Germany':'#f5c518','Turkey':'#c8102e','Türkiye':'#c8102e'};
-    const HIGHLIGHT_OWNERS={'England':'Alicia','Germany':'Vicky','Turkey':'Safak','Türkiye':'Safak'};
-    const HIGHLIGHT_TEAMS={'England':'fx-england','Germany':'fx-germany','Turkey':'fx-turkey','Türkiye':'fx-turkey'};
-    const homeColor=HIGHLIGHT_COLORS[home];
-    const awayColor=HIGHLIGHT_COLORS[away];
-    const homeOwner=HIGHLIGHT_OWNERS[home];
-    const awayOwner=HIGHLIGHT_OWNERS[away];
-    let style='', cls='';
+    const hl=highlightMap();
+    const homeColor=hl.colors[home]||fuzzy(hl.colors,home);
+    const awayColor=hl.colors[away]||fuzzy(hl.colors,away);
+    const homeOwner=hl.owners[home]||fuzzy(hl.owners,home);
+    const awayOwner=hl.owners[away]||fuzzy(hl.owners,away);
+    let style='';
     if(homeColor&&awayColor&&homeColor!==awayColor){
       style=`background:linear-gradient(to right, color-mix(in srgb, ${homeColor} 12%, white) 50%, color-mix(in srgb, ${awayColor} 12%, white) 50%);border-left-color:${homeColor};border-right:4px solid ${awayColor};`;
     }else{
-      cls=HIGHLIGHT_TEAMS[home]||HIGHLIGHT_TEAMS[away]||'';
+      const color=homeColor||awayColor;
+      style=color?`border-left-color:${color};background:color-mix(in srgb, ${color} 10%, white);`:'';
     }
     const rivalry=(homeOwner&&awayOwner&&homeOwner!==awayOwner)
       ? `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`
       : '';
-    return `<div class="fx-row${cls?' '+cls:''}" style="${style}">
+    return `<div class="fx-row" style="${style}">
       ${leftCol}
       <div class="fx-teams">
         ${flagFor(home)} ${home} <span style="color:var(--gray-400);font-weight:400">vs</span> ${away} ${flagFor(away)}

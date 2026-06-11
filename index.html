@@ -777,7 +777,7 @@ async function renderFixtures(){
       const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       leftCol=`<div class="fx-time">${time}</div>`;
     }
-    const HIGHLIGHT_TEAMS={'England':'fx-england','Germany':'fx-germany','Türkiye':'fx-turkey'};
+    const HIGHLIGHT_TEAMS={'England':'fx-england','Germany':'fx-germany','Turkey':'fx-turkey','Türkiye':'fx-turkey'};
     const highlight=HIGHLIGHT_TEAMS[home]||HIGHLIGHT_TEAMS[away]||'';
     return `<div class="fx-row${highlight?' '+highlight:''}">
       ${leftCol}

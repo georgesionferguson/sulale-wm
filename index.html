@@ -340,10 +340,10 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
       <div class="pts-row"><div class="pts-label">Dein Land erreicht das Achtelfinale</div><div class="pts-val"><span class="pill">+6 Pkt.</span></div></div>
       <div class="pts-row"><div class="pts-label">Dein Land erreicht das Viertelfinale</div><div class="pts-val"><span class="pill">+4 Pkt.</span></div></div>
       <div class="pts-row"><div class="pts-label">Dein Land erreicht das Finale</div><div class="pts-val"><span class="pill">+4 Pkt.</span></div></div>
-      <div class="pts-row"><div class="pts-label">Dein Land gewinnt die WM</div><div class="pts-val"><span class="pill">+2 Pkt.</span></div></div>
+      <div class="pts-row"><div class="pts-label">Dein Land gewinnt die WM</div><div class="pts-val"><span class="pill">+4 Pkt.</span></div></div>
     </div>
     <div style="margin-top:14px;font-size:13px;color:var(--gray-600);line-height:1.6">
-      Jedes Land sammelt Punkte für Tore, plus einen Phasen-Bonus, der sich mit jedem Fortschritt aufaddiert — jede Stufe kommt zu den vorherigen dazu. Ein Land, das das Finale erreicht, hat also insgesamt 10+6+4+4 = 24 Punkte gesammelt, und ein Weltmeister landet am Ende bei 10+6+4+4+2 = 26 Punkten. Ein Team mit 6 Toren bekommt allein dafür 24 Punkte, zusätzlich zum bisher erreichten Phasen-Bonus. Tore und Phasen-Boni werden live während des Turniers aktualisiert.
+      Jedes Land sammelt Punkte für Tore, plus einen Phasen-Bonus, der sich mit jedem Fortschritt aufaddiert — jede Stufe kommt zu den vorherigen dazu. Ein Land, das das Finale erreicht, hat also insgesamt 10+6+4+4 = 24 Punkte gesammelt, und ein Weltmeister landet am Ende bei 10+6+4+4+4 = 28 Punkten. Ein Team mit 6 Toren bekommt allein dafür 24 Punkte, zusätzlich zum bisher erreichten Phasen-Bonus. Tore und Phasen-Boni werden live während des Turniers aktualisiert.
     </div>
   </div>
 
@@ -446,7 +446,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 <script>
 // ── Constants ─────────────────────────────────────────────
 const GOAL_PTS=4;
-const BONUS={'Last 32':10,'Last 16':16,'Quarter-final':20,'Final':24,'Winner':26};
+const BONUS={'Last 32':10,'Last 16':16,'Quarter-final':20,'Final':24,'Winner':28};
 const STAGES=['Last 32','Last 16','Quarter-final','Final','Winner'];
 const API='/api/games';
 const LS='wc26_v2';

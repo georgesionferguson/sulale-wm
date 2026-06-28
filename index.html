@@ -1101,26 +1101,47 @@ function gameBets(gameId){
 }
 
 function calcBettingPL(games){
-  const pl={};
-  BET_PLAYERS.forEach(p=>{pl[p]={placed:0,won:0,net:0};});
-  allBets.forEach(b=>{
-    if(pl[b.player]){pl[b.player].placed++;pl[b.player].net-=1;}
+  // Build team ID map from group games
+  const tidMap={};
+  games.filter(g=>g.type==='group').forEach(g=>{
+    const h=g.home_team_name_en||g.home_team_en||null;
+    const a=g.away_team_name_en||g.away_team_en||null;
+    if(h&&g.home_team_id&&g.home_team_id!=='0') tidMap[g.home_team_id]=TEAM_ALIASES[h]||h;
+    if(a&&g.away_team_id&&g.away_team_id!=='0') tidMap[g.away_team_id]=TEAM_ALIASES[a]||a;
   });
+
+  const pl={};
+  BET_PLAYERS.forEach(p=>{pl[p]={placed:0,won:0,net:0,pending:0};});
+
   games.filter(g=>g.type!=='group').forEach(g=>{
-    if(String(g.finished).toUpperCase()!=='TRUE') return;
-    const h=(TEAM_ALIASES[g.home]||g.home||'').trim();
-    const a=(TEAM_ALIASES[g.away]||g.away||'').trim();
-    if(!h||!a) return;
-    const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
-    const winner=hs>as_?h:a;
-    const gb=gameBets(g.id);
+    const gid=String(g.id);
+    const gb=allBets.filter(b=>b.game_id===gid);
+    if(!gb.length) return;
+
+    const h=(g.home_team_id&&g.home_team_id!=='0'?tidMap[g.home_team_id]||'':'').trim();
+    const a=(g.away_team_id&&g.away_team_id!=='0'?tidMap[g.away_team_id]||'':'').trim();
     const hB=gb.filter(b=>b.team===h), aB=gb.filter(b=>b.team===a);
-    if(!hB.length||!aB.length) return;
-    const total=hB.length+aB.length;
-    const wB=winner===h?hB:aB;
-    wB.forEach(b=>{
-      if(pl[b.player]){const gain=total/wB.length;pl[b.player].won+=gain;pl[b.player].net+=gain;}
-    });
+    const activated=h&&a&&hB.length>0&&aB.length>0;
+
+    if(!activated){
+      // Money is not committed until both sides bet
+      gb.forEach(b=>{if(pl[b.player]) pl[b.player].pending++;});
+      return;
+    }
+
+    // Activated: commit €1 per bet
+    gb.forEach(b=>{if(pl[b.player]){pl[b.player].placed++;pl[b.player].net-=1;}});
+
+    // Finished: pay out winners
+    if(String(g.finished).toUpperCase()==='TRUE'){
+      const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
+      const winner=hs>as_?h:a;
+      const total=hB.length+aB.length;
+      const wB=winner===h?hB:aB;
+      wB.forEach(b=>{
+        if(pl[b.player]){const gain=total/wB.length;pl[b.player].won+=gain;pl[b.player].net+=gain;}
+      });
+    }
   });
   return pl;
 }
@@ -1234,7 +1255,7 @@ async function renderBetting(){
       <div class="bet-bal-name">${p}</div>
       <div>
         <div class="bet-bal-euro ${cls}">${v.net>=0?'+':''}€${v.net.toFixed(2)}</div>
-        <div class="bet-bal-meta">${v.placed} Wetten · gewonnen €${v.won.toFixed(2)}</div>
+        <div class="bet-bal-meta">${v.placed} aktiv · ${v.pending} ausstehend · gewonnen €${v.won.toFixed(2)}</div>
       </div>
     </div>`;
   });

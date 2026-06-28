@@ -1291,6 +1291,7 @@ async function renderBetting(){
       const activated=teamsKnown&&hB.length>0&&aB.length>0;
       const total=hB.length+aB.length;
       const winner=done&&teamsKnown?hs>as_?h:a:null;
+      const ko=fixtureLocalToDate(g);
 
       let locked=!teamsKnown||done;
       if(!locked&&ko&&Date.now()>=ko.getTime()) locked=true;
@@ -1329,7 +1330,6 @@ async function renderBetting(){
         payoutHtml=`<div class="bet-pool-note">Topf: €${total} · Gewinner nimmt alles (anteilig)</div>`;
       }
 
-      const ko=fixtureLocalToDate(g);
       const koStr=ko?ko.toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
       html+=`<div class="bet-game${activated&&!done?' activated':''}">
         ${activated&&!done?`<div class="bet-active-banner">🔥 Wetten aktiv · €${total} im Topf</div>`:''}

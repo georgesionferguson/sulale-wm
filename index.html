@@ -1155,10 +1155,12 @@ async function renderBetting(){
   const el=document.getElementById('betting');
   el.innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray-400);font-size:13px;">Lade…</div>';
   if(!betsLoaded) await loadBets();
+  if(!gamesCache.length) await syncNow();
   if(!betPlayer){ try{betPlayer=localStorage.getItem('sulale_bet_player');}catch(e){} }
 
   const games=gamesCache||[];
-  const koGames=games.filter(g=>g.type!=='group');
+  // Only show KO games — skip ones with null teams that haven't been scheduled yet
+  const koGames=games.filter(g=>g.type!=='group'&&(g.home||g.away||String(g.finished).toUpperCase()==='TRUE'));
   const pl=calcBettingPL(games);
   const wc=wcWinnerInfo();
   const leader=currentLeaderInfo();

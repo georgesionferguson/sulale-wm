@@ -1193,8 +1193,14 @@ function setBetPlayer(name){
 async function renderBetting(){
   const el=document.getElementById('betting');
   el.innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray-400);font-size:13px;">Lade…</div>';
-  if(!betsLoaded) await loadBets();
-  if(!gamesCache.length) await syncNow();
+  try{
+  // Race loadBets against a 5s timeout so we never hang
+  if(!betsLoaded){
+    await Promise.race([loadBets(), new Promise(r=>setTimeout(r,5000))]);
+  }
+  if(!gamesCache.length){
+    await Promise.race([syncNow(), new Promise(r=>setTimeout(r,5000))]);
+  }
   if(!betPlayer){ try{betPlayer=localStorage.getItem('sulale_bet_player');}catch(e){} }
 
   const games=gamesCache||[];
@@ -1352,6 +1358,9 @@ async function renderBetting(){
   }
   html+=potsHtml+ledgerHtml;
   el.innerHTML=html;
+  }catch(err){
+    el.innerHTML=`<div style="padding:2rem;text-align:center;color:#dc2626;font-size:13px;">Fehler beim Laden: ${err.message}</div>`;
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────

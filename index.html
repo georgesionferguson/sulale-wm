@@ -1203,10 +1203,10 @@ async function renderBetting(){
     </select>
   </div>`;
 
-  // Two prize pots
+  // Two prize pots — built as variable, appended after game cards
   const wcCol=wc?.color||'var(--gold)';
   const ldrCol=leader?PLAYER_COLORS[leader.name]||leader.color||'var(--gold)':'var(--gold)';
-  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem;">
+  const potsHtml=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1.25rem;margin-bottom:0;">
     <div class="wc-pot" style="margin:0">
       <div class="wc-pot-label">🏆 WM-Sieger</div>
       <div class="wc-pot-name" style="color:${wcCol};font-size:16px">${wc?`${flagFor(wc.team)} ${wc.team}`:'Noch offen'}</div>
@@ -1221,15 +1221,15 @@ async function renderBetting(){
     </div>
   </div>`;
 
-  // Betting P&L
-  html+=`<div class="bet-ledger"><div class="bet-ledger-hdr">
+  // Build P&L ledger — rendered after game cards
+  const sorted=[...BET_PLAYERS].sort((a,b)=>pl[b].net-pl[a].net);
+  let ledgerHtml=`<div class="bet-ledger" style="margin-top:1.25rem"><div class="bet-ledger-hdr">
     <span style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">Wett-Ergebnis</span>
     <span style="font-size:11px;color:rgba(255,255,255,.35)">€1 pro Spiel</span>
   </div>`;
-  const sorted=[...BET_PLAYERS].sort((a,b)=>pl[b].net-pl[a].net);
   sorted.forEach(p=>{
     const v=pl[p], cls=v.net>0?'pos':v.net<0?'neg':'even';
-    html+=`<div class="bet-bal-row">
+    ledgerHtml+=`<div class="bet-bal-row">
       <div class="bet-bal-dot" style="background:${PLAYER_COLORS[p]||'#888'}"></div>
       <div class="bet-bal-name">${p}</div>
       <div>
@@ -1238,13 +1238,18 @@ async function renderBetting(){
       </div>
     </div>`;
   });
-  html+='</div>';
+  ledgerHtml+='</div>';
 
-  // KO game cards
-  if(!koGames.length){
+  // KO game cards — sorted by kickoff time
+  const koSorted=[...koGames].sort((a,b)=>{
+    const ka=fixtureLocalToDate(a), kb=fixtureLocalToDate(b);
+    if(!ka&&!kb) return 0; if(!ka) return 1; if(!kb) return -1;
+    return ka-kb;
+  });
+  if(!koSorted.length){
     html+='<div style="text-align:center;color:var(--gray-400);padding:2rem;font-size:13px;">Knock-out-Spiele erscheinen hier sobald die Gruppenphase endet.</div>';
   } else {
-    koGames.forEach(g=>{
+    koSorted.forEach(g=>{
       // Resolve via ID map (KO games have no home_team_name_en, only IDs)
       const hRaw=g.home_team_id&&g.home_team_id!=='0'?teamIdMap[g.home_team_id]||'':'';
       const aRaw=g.away_team_id&&g.away_team_id!=='0'?teamIdMap[g.away_team_id]||'':'';
@@ -1261,7 +1266,7 @@ async function renderBetting(){
       const winner=done&&teamsKnown?hs>as_?h:a:null;
 
       let locked=!teamsKnown||done;
-      if(!locked){const ko=fixtureLocalToDate(g);if(ko&&Date.now()>=ko.getTime())locked=true;}
+      if(!locked&&ko&&Date.now()>=ko.getTime()) locked=true;
 
       let stTxt=teamsKnown?'Offen':'Noch unbekannt',stCls='pending';
       if(done&&activated){stTxt='Abgerechnet ✓';stCls='done';}
@@ -1297,10 +1302,12 @@ async function renderBetting(){
         payoutHtml=`<div class="bet-pool-note">Topf: €${total} · Gewinner nimmt alles (anteilig)</div>`;
       }
 
+      const ko=fixtureLocalToDate(g);
+      const koStr=ko?ko.toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
       html+=`<div class="bet-game${activated&&!done?' activated':''}">
         ${activated&&!done?`<div class="bet-active-banner">🔥 Wetten aktiv · €${total} im Topf</div>`:''}
         <div class="bet-game-hdr">
-          <span class="bet-stage-lbl">${g.type||'KO'}${g.group?' · '+g.group:''}</span>
+          <span class="bet-stage-lbl">${g.type||'KO'}${g.group?' · '+g.group:''}${koStr?` · ${koStr}`:''}</span>
           <span class="bet-status ${stCls}">${stTxt}</span>
         </div>
         <div class="bet-cols">
@@ -1322,6 +1329,7 @@ async function renderBetting(){
       </div>`;
     });
   }
+  html+=potsHtml+ledgerHtml;
   el.innerHTML=html;
 }
 

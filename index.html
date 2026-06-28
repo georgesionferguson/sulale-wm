@@ -1159,8 +1159,18 @@ async function renderBetting(){
   if(!betPlayer){ try{betPlayer=localStorage.getItem('sulale_bet_player');}catch(e){} }
 
   const games=gamesCache||[];
-  // Only show KO games — skip ones with null teams that haven't been scheduled yet
-  const koGames=games.filter(g=>g.type!=='group'&&(g.home||g.away||String(g.finished).toUpperCase()==='TRUE'));
+
+  // Build team ID → canonical name from group games (which carry home_team_name_en)
+  const teamIdMap={};
+  games.filter(g=>g.type==='group').forEach(g=>{
+    const h=g.home_team_name_en||g.home_team_en||null;
+    const a=g.away_team_name_en||g.away_team_en||null;
+    if(h&&g.home_team_id&&g.home_team_id!=='0') teamIdMap[g.home_team_id]=TEAM_ALIASES[h]||h;
+    if(a&&g.away_team_id&&g.away_team_id!=='0') teamIdMap[g.away_team_id]=TEAM_ALIASES[a]||a;
+  });
+
+  // Only show KO games that are either scheduled (team IDs assigned) or finished
+  const koGames=games.filter(g=>g.type!=='group'&&(g.home_team_id!=='0'||g.away_team_id!=='0'||String(g.finished).toUpperCase()==='TRUE'));
   const pl=calcBettingPL(games);
   const wc=wcWinnerInfo();
   const leader=currentLeaderInfo();
@@ -1217,11 +1227,12 @@ async function renderBetting(){
     html+='<div style="text-align:center;color:var(--gray-400);padding:2rem;font-size:13px;">Knock-out-Spiele erscheinen hier sobald die Gruppenphase endet.</div>';
   } else {
     koGames.forEach(g=>{
-      const hRaw=(TEAM_ALIASES[g.home]||g.home||'').trim();
-      const aRaw=(TEAM_ALIASES[g.away]||g.away||'').trim();
+      // Resolve via ID map (KO games have no home_team_name_en, only IDs)
+      const hRaw=g.home_team_id&&g.home_team_id!=='0'?teamIdMap[g.home_team_id]||'':'';
+      const aRaw=g.away_team_id&&g.away_team_id!=='0'?teamIdMap[g.away_team_id]||'':'';
       const teamsKnown=hRaw.length>0&&aRaw.length>0;
-      const h=teamsKnown?hRaw:'TBD';
-      const a=teamsKnown?aRaw:'TBD';
+      const h=teamsKnown?hRaw:(g.home_team_label||'TBD');
+      const a=teamsKnown?aRaw:(g.away_team_label||'TBD');
       const gid=String(g.id);
       const gb=gameBets(gid);
       const hB=gb.filter(b=>b.team===h), aB=gb.filter(b=>b.team===a);

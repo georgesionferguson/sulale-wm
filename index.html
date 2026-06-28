@@ -44,7 +44,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .hdr-logo .ball{font-size:20px;}
 .hdr-tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:600;}
 .nav{background:var(--navy-mid);border-top:1px solid rgba(255,255,255,.07);}
-.nav-inner{max-width:760px;margin:0 auto;padding:0 1rem;display:flex;width:100%;}
+.nav-inner{max-width:760px;margin:0 auto;padding:0 1rem;display:flex;width:100%;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.nav-inner::-webkit-scrollbar{display:none;}
 .nav-btn{padding:11px 16px;font-size:13px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.42);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'Inter',sans-serif;transition:color .15s,border-color .15s;white-space:nowrap;}
 .nav-btn:hover{color:rgba(255,255,255,.75);}
 .nav-btn.on{color:var(--gold);border-bottom-color:var(--gold);}
@@ -230,7 +231,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
   .hdr-inner{height:48px;}
   .hdr-logo{font-size:20px;}
   .hdr-tag{display:none;}
-  .nav-btn{padding:12px 10px;font-size:12px;flex:1;text-align:center;}
+  .nav-btn{padding:12px 10px;font-size:12px;flex:0 0 auto;text-align:center;}
   .nav-inner{padding:0;}
 
   /* Page */

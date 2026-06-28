@@ -703,6 +703,7 @@ async function syncNow(){
       document.getElementById('board-sync-label').textContent='Last sync: '+lastSync.toLocaleTimeString();
     save(); renderBoard(); renderSquads();
     if(document.getElementById('fixtures').classList.contains('on')) renderFixtures();
+    if(document.getElementById('betting').classList.contains('on')) renderBetting();
   }catch(e){
     if(dot) dot.className='sync-dot';
     if(lbl) lbl.textContent='Sync failed — '+e.message;
@@ -1137,6 +1138,17 @@ function currentLeaderInfo(){
 
 async function handleBet(gameId,team){
   if(!betPlayer) return;
+  // Safety check: reject if game has already kicked off
+  const g=gamesCache.find(g=>String(g.id)===String(gameId));
+  if(g){
+    const done=String(g.finished).toUpperCase()==='TRUE';
+    const ko=fixtureLocalToDate(g);
+    if(done||(ko&&Date.now()>=ko.getTime())){
+      alert('Diese Wette ist gesperrt — das Spiel hat bereits begonnen.');
+      renderBetting();
+      return;
+    }
+  }
   const existing=allBets.find(b=>b.game_id===String(gameId)&&b.player===betPlayer);
   try{
     if(existing&&existing.team===team) await deleteBetRow(gameId,betPlayer);

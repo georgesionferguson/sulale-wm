@@ -1061,7 +1061,6 @@ const PLAYER_COLORS={
   Katerina:'#7c3aed',Melina:'#0891b2',Guillermo:'#db2777',Vicky:'#65a30d',
   Lydia:'#ea580c',George:'#4338ca'
 };
-const START_BET_POT=5, START_WC_POT=50;
 
 let allBets=[],betPlayer=null,betsLoaded=false;
 
@@ -1097,15 +1096,16 @@ function gameBets(gameId){
   return allBets.filter(b=>b.game_id===String(gameId));
 }
 
-function calcBalances(games){
-  const bal={};
-  BET_PLAYERS.forEach(p=>{bal[p]={pot:START_BET_POT,placed:0,winnings:0};});
+function calcBettingPL(games){
+  const pl={};
+  BET_PLAYERS.forEach(p=>{pl[p]={placed:0,won:0,net:0};});
   allBets.forEach(b=>{
-    if(bal[b.player]){bal[b.player].pot-=1;bal[b.player].placed+=1;}
+    if(pl[b.player]){pl[b.player].placed++;pl[b.player].net-=1;}
   });
   games.filter(g=>g.type!=='group').forEach(g=>{
     if(String(g.finished).toUpperCase()!=='TRUE') return;
-    const h=TEAM_ALIASES[g.home]||g.home, a=TEAM_ALIASES[g.away]||g.away;
+    const h=(TEAM_ALIASES[g.home]||g.home||'').trim();
+    const a=(TEAM_ALIASES[g.away]||g.away||'').trim();
     if(!h||!a) return;
     const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
     const winner=hs>as_?h:a;
@@ -1115,10 +1115,10 @@ function calcBalances(games){
     const total=hB.length+aB.length;
     const wB=winner===h?hB:aB;
     wB.forEach(b=>{
-      if(bal[b.player]){const gain=total/wB.length;bal[b.player].winnings+=gain;bal[b.player].pot+=gain;}
+      if(pl[b.player]){const gain=total/wB.length;pl[b.player].won+=gain;pl[b.player].net+=gain;}
     });
   });
-  return bal;
+  return pl;
 }
 
 function wcWinnerInfo(){
@@ -1126,7 +1126,13 @@ function wcWinnerInfo(){
   if(!entry) return null;
   const team=entry[0];
   const owner=S.players.find(p=>(p.countries||[]).includes(team));
-  return {team,owner:owner?.name};
+  return {team,owner:owner?.name,color:owner?PLAYER_COLORS[owner.name]||owner.color:null};
+}
+
+function currentLeaderInfo(){
+  if(!S.players||!S.players.length) return null;
+  const sorted=[...S.players].map(p=>({name:p.name,pts:calcPlayerPts(p),color:p.color})).sort((a,b)=>b.pts-a.pts);
+  return sorted[0]||null;
 }
 
 async function handleBet(gameId,team){
@@ -1153,8 +1159,9 @@ async function renderBetting(){
 
   const games=gamesCache||[];
   const koGames=games.filter(g=>g.type!=='group');
-  const bal=calcBalances(games);
+  const pl=calcBettingPL(games);
   const wc=wcWinnerInfo();
+  const leader=currentLeaderInfo();
   let html='';
 
   // Player selector
@@ -1166,28 +1173,38 @@ async function renderBetting(){
     </select>
   </div>`;
 
-  // WC jackpot
-  const jCol=wc?.owner?PLAYER_COLORS[wc.owner]||'var(--gold)':'var(--gold)';
-  html+=`<div class="wc-pot">
-    <div class="wc-pot-label">WM-Sieger Jackpot</div>
-    <div class="wc-pot-name" style="color:${jCol}">${wc?`${flagFor(wc.team)} ${wc.team} → ${wc.owner}`:'Noch offen'}</div>
-    <div class="wc-pot-sub">€${START_WC_POT} Topf · geht an den Spieler mit dem WM-Sieger</div>
+  // Two prize pots
+  const wcCol=wc?.color||'var(--gold)';
+  const ldrCol=leader?PLAYER_COLORS[leader.name]||leader.color||'var(--gold)':'var(--gold)';
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem;">
+    <div class="wc-pot" style="margin:0">
+      <div class="wc-pot-label">🏆 WM-Sieger</div>
+      <div class="wc-pot-name" style="color:${wcCol};font-size:16px">${wc?`${flagFor(wc.team)} ${wc.team}`:'Noch offen'}</div>
+      <div class="wc-pot-sub" style="margin-top:2px">${wc?`→ ${wc.owner}`:''}</div>
+      <div style="margin-top:8px;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);line-height:1">€50</div>
+    </div>
+    <div class="wc-pot" style="margin:0">
+      <div class="wc-pot-label">🥇 Spielsieger</div>
+      <div class="wc-pot-name" style="color:${ldrCol};font-size:16px">${leader?leader.name:'—'}</div>
+      <div class="wc-pot-sub" style="margin-top:2px">${leader?leader.pts+' Punkte':''}</div>
+      <div style="margin-top:8px;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);line-height:1">€50</div>
+    </div>
   </div>`;
 
-  // Balance ledger
+  // Betting P&L
   html+=`<div class="bet-ledger"><div class="bet-ledger-hdr">
-    <span style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">Kontostand — Wett-Topf</span>
-    <span style="font-size:11px;color:rgba(255,255,255,.35)">Start €${START_BET_POT}/P.</span>
+    <span style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">Wett-Ergebnis</span>
+    <span style="font-size:11px;color:rgba(255,255,255,.35)">€1 pro Spiel</span>
   </div>`;
-  BET_PLAYERS.forEach(p=>{
-    const b=bal[p], v=b.pot, net=v-START_BET_POT;
-    const cls=v>START_BET_POT?'pos':v<START_BET_POT?'neg':'even';
+  const sorted=[...BET_PLAYERS].sort((a,b)=>pl[b].net-pl[a].net);
+  sorted.forEach(p=>{
+    const v=pl[p], cls=v.net>0?'pos':v.net<0?'neg':'even';
     html+=`<div class="bet-bal-row">
       <div class="bet-bal-dot" style="background:${PLAYER_COLORS[p]||'#888'}"></div>
       <div class="bet-bal-name">${p}</div>
       <div>
-        <div class="bet-bal-euro ${cls}">€${v.toFixed(2)}</div>
-        <div class="bet-bal-meta">${net>=0?'+':''}${net.toFixed(2)} · ${b.placed} Wetten</div>
+        <div class="bet-bal-euro ${cls}">${v.net>=0?'+':''}€${v.net.toFixed(2)}</div>
+        <div class="bet-bal-meta">${v.placed} Wetten · gewonnen €${v.won.toFixed(2)}</div>
       </div>
     </div>`;
   });
@@ -1198,30 +1215,33 @@ async function renderBetting(){
     html+='<div style="text-align:center;color:var(--gray-400);padding:2rem;font-size:13px;">Knock-out-Spiele erscheinen hier sobald die Gruppenphase endet.</div>';
   } else {
     koGames.forEach(g=>{
-      const h=TEAM_ALIASES[g.home]||g.home||'?';
-      const a=TEAM_ALIASES[g.away]||g.away||'?';
+      const hRaw=(TEAM_ALIASES[g.home]||g.home||'').trim();
+      const aRaw=(TEAM_ALIASES[g.away]||g.away||'').trim();
+      const teamsKnown=hRaw.length>0&&aRaw.length>0;
+      const h=teamsKnown?hRaw:'TBD';
+      const a=teamsKnown?aRaw:'TBD';
       const gid=String(g.id);
       const gb=gameBets(gid);
       const hB=gb.filter(b=>b.team===h), aB=gb.filter(b=>b.team===a);
       const done=String(g.finished).toUpperCase()==='TRUE';
       const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
-      const activated=hB.length>0&&aB.length>0;
+      const activated=teamsKnown&&hB.length>0&&aB.length>0;
       const total=hB.length+aB.length;
-      const winner=done?hs>as_?h:a:null;
+      const winner=done&&teamsKnown?hs>as_?h:a:null;
 
-      let locked=done;
+      let locked=!teamsKnown||done;
       if(!locked){const ko=fixtureLocalToDate(g);if(ko&&Date.now()>=ko.getTime())locked=true;}
 
-      let stTxt='Offen',stCls='pending';
+      let stTxt=teamsKnown?'Offen':'Noch unbekannt',stCls='pending';
       if(done&&activated){stTxt='Abgerechnet ✓';stCls='done';}
-      else if(done){stTxt='Keine Wetten';stCls='done';}
+      else if(done){stTxt='Fertig';stCls='done';}
       else if(activated){stTxt=`Aktiv ✓ · €${total}`;stCls='active';}
-      else if(locked){stTxt='Gesperrt';stCls='locked';}
+      else if(locked&&teamsKnown){stTxt='Gesperrt';stCls='locked';}
 
       const myBet=betPlayer?gb.find(b=>b.player===betPlayer):null;
 
       const betBtn=(team)=>{
-        if(!betPlayer||locked) return '';
+        if(!betPlayer||locked||!teamsKnown) return '';
         const isMine=myBet&&myBet.team===team;
         return `<button class="bet-btn${isMine?' mine':''}" onclick="handleBet('${gid}','${team.replace(/'/g,"\\'")}');this.disabled=true">
           ${isMine?'✓ zurückziehen':'€1 setzen'}
@@ -1229,9 +1249,22 @@ async function renderBetting(){
       };
 
       const chips=(arr,team)=>arr.map(b=>{
-        let cls=done&&activated?winner===team?'win':'lose':'';
+        const cls=done&&activated?winner===team?'win':'lose':'';
         return `<span class="bet-chip ${cls}">${b.player}</span>`;
       }).join('');
+
+      // Payout summary for finished activated games
+      let payoutHtml='';
+      if(done&&activated&&winner){
+        const wB=winner===h?hB:aB;
+        const gainEach=(total/wB.length).toFixed(2);
+        const names=wB.map(b=>b.player).join(', ');
+        payoutHtml=`<div class="bet-pool-note" style="color:#16a34a;font-weight:600">
+          🏆 ${names} ${wB.length>1?'teilen':'bekommt'} je €${gainEach} (Topf: €${total})
+        </div>`;
+      } else if(activated){
+        payoutHtml=`<div class="bet-pool-note">Topf: €${total} · Gewinner nimmt alles (anteilig)</div>`;
+      }
 
       html+=`<div class="bet-game">
         <div class="bet-game-hdr">
@@ -1240,20 +1273,20 @@ async function renderBetting(){
         </div>
         <div class="bet-cols">
           <div class="bet-col">
-            <div class="bet-team">${flagFor(h)} ${h}</div>
-            ${done?`<div class="bet-score ${winner===h?'won':'lost'}">${hs}</div>`:''}
+            <div class="bet-team">${teamsKnown?flagFor(h)+' ':''}<span style="${!teamsKnown?'color:var(--gray-300)':''}">${h}</span></div>
+            ${done&&teamsKnown?`<div class="bet-score ${winner===h?'won':'lost'}">${hs}</div>`:''}
             ${betBtn(h)}
             <div class="bet-chips">${chips(hB,h)}</div>
           </div>
           <div class="bet-vs">vs</div>
           <div class="bet-col">
-            <div class="bet-team">${flagFor(a)} ${a}</div>
-            ${done?`<div class="bet-score ${winner===a?'won':'lost'}">${as_}</div>`:''}
+            <div class="bet-team">${teamsKnown?flagFor(a)+' ':''}<span style="${!teamsKnown?'color:var(--gray-300)':''}">${a}</span></div>
+            ${done&&teamsKnown?`<div class="bet-score ${winner===a?'won':'lost'}">${as_}</div>`:''}
             ${betBtn(a)}
             <div class="bet-chips">${chips(aB,a)}</div>
           </div>
         </div>
-        ${activated?`<div class="bet-pool-note">Topf: €${total} · Gewinner teilen proportional</div>`:''}
+        ${payoutHtml}
       </div>`;
     });
   }

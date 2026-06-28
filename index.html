@@ -326,6 +326,9 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-status.locked{color:#f87171;}
 .bet-status.pending{color:rgba(255,255,255,.3);}
 .bet-status.done{color:rgba(255,255,255,.3);}
+.bet-game.activated{border:2px solid var(--gold);box-shadow:0 0 0 3px rgba(245,197,24,.15),var(--shadow);}
+.bet-game.activated .bet-game-hdr{background:linear-gradient(90deg,var(--navy) 0%,#2a1f00 100%);}
+.bet-active-banner{background:var(--gold);color:var(--navy);text-align:center;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;}
 .bet-cols{display:flex;}
 .bet-col{flex:1;padding:12px 10px;text-align:center;}
 .bet-col:first-child{border-right:1px solid var(--gray-100);}
@@ -1294,7 +1297,8 @@ async function renderBetting(){
         payoutHtml=`<div class="bet-pool-note">Topf: €${total} · Gewinner nimmt alles (anteilig)</div>`;
       }
 
-      html+=`<div class="bet-game">
+      html+=`<div class="bet-game${activated&&!done?' activated':''}">
+        ${activated&&!done?`<div class="bet-active-banner">🔥 Wetten aktiv · €${total} im Topf</div>`:''}
         <div class="bet-game-hdr">
           <span class="bet-stage-lbl">${g.type||'KO'}${g.group?' · '+g.group:''}</span>
           <span class="bet-status ${stCls}">${stTxt}</span>

@@ -372,6 +372,26 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bi-stat{font-size:11px;font-weight:600;background:var(--white);border:1px solid var(--gray-200);border-radius:20px;padding:2px 8px;color:var(--gray-600);}
 .bet-insight-text{font-size:12px;color:var(--gray-600);line-height:1.55;}
 .bet-insight-divider{border-top:1px dashed var(--gray-200);margin:4px 0 12px;}
+/* Match feed / live timeline */
+.mf-wrap{background:var(--white);border-top:1px solid var(--gray-200);}
+.mf-live-hdr{display:flex;align-items:center;gap:7px;padding:8px 14px;background:#fff7ed;border-bottom:1px solid #fed7aa;font-size:11px;font-weight:800;color:#c2410c;letter-spacing:.06em;text-transform:uppercase;}
+.mf-live-pulse{width:7px;height:7px;border-radius:50%;background:#dc2626;flex-shrink:0;animation:pulse 1.2s ease infinite;}
+.mf-events{padding:4px 0;}
+.mf-event{display:grid;grid-template-columns:1fr 58px 1fr;align-items:center;padding:5px 12px;gap:4px;}
+.mf-event:nth-child(even){background:#fafbfc;}
+.mf-left{text-align:right;font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mf-right{text-align:left;font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mf-mid{text-align:center;font-size:11px;color:var(--gray-400);white-space:nowrap;}
+.mf-min{font-size:11px;font-weight:700;color:var(--navy);}
+.mf-empty{padding:10px 14px;font-size:12px;color:var(--gray-400);text-align:center;font-style:italic;}
+.mf-pens{border-top:1px dashed var(--gray-200);padding:8px 12px 10px;}
+.mf-pens-hdr{font-size:11px;font-weight:800;color:var(--navy);letter-spacing:.04em;margin-bottom:6px;}
+.mf-pens-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.mf-pens-team{font-size:11px;font-weight:600;color:var(--gray-600);min-width:0;flex:0 0 auto;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mf-kick{font-size:15px;line-height:1;}
+.mf-toggle{width:100%;background:#f8fafc;border:none;border-top:1px solid var(--gray-200);padding:10px 14px;font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;text-align:left;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between;}
+.mf-toggle:hover{background:#f1f5f9;}
+.mf-chev{font-size:13px;color:var(--navy);font-weight:900;}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -1162,6 +1182,67 @@ function teamInsightText(name,s,allStats){
   return parts.join(' ');
 }
 
+function parseScorers(raw){
+  if(!raw||raw==='null') return [];
+  const m=String(raw).match(/"([^"]+)"/g);
+  if(!m) return [];
+  return m.map(s=>{
+    const str=s.replace(/"/g,'');
+    const parts=str.match(/^(.+?)\s+(\d+(?:\+\d+)?)'?$/);
+    if(!parts) return {name:str,min:"?'",minVal:9999};
+    const minStr=parts[2];
+    const [base,extra]=minStr.split('+').map(n=>parseInt(n)||0);
+    return {name:parts[1],min:minStr+"'",minVal:(base||0)*100+(extra||0)};
+  });
+}
+function parsePenalties(raw){
+  if(!raw||raw==='null') return [];
+  const m=String(raw).match(/"([^"]+)"/g);
+  if(!m) return [];
+  return m.map(s=>s.replace(/"/g,''));
+}
+function buildMatchFeed(g,h,a,live){
+  const hSc=parseScorers(g.home_scorers), aSc=parseScorers(g.away_scorers);
+  const hpS=parseInt(g.home_penalty_score)||0, apS=parseInt(g.away_penalty_score)||0;
+  const hasPens=hpS>0||apS>0;
+  const events=[...hSc.map(s=>({...s,side:'home'})),...aSc.map(s=>({...s,side:'away'}))].sort((x,y)=>x.minVal-y.minVal);
+  let html='<div class="mf-wrap">';
+  if(live) html+=`<div class="mf-live-hdr"><span class="mf-live-pulse"></span>Live-Ereignisse</div>`;
+  if(events.length===0&&!hasPens){
+    html+=`<div class="mf-empty">${live?'Noch keine Tore':'Torlos'}</div>`;
+  } else {
+    html+='<div class="mf-events">';
+    events.forEach(ev=>{
+      const isHome=ev.side==='home';
+      html+=`<div class="mf-event">
+        <div class="mf-left">${isHome?`<span>${ev.name}</span>`:''}</div>
+        <div class="mf-mid">⚽&thinsp;<span class="mf-min">${ev.min}</span></div>
+        <div class="mf-right">${!isHome?`<span>${ev.name}</span>`:''}</div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  if(hasPens){
+    const hPSc=parsePenalties(g.home_penalty_scorers), aPSc=parsePenalties(g.away_penalty_scorers);
+    const hPMs=parsePenalties(g.home_penalty_misses), aPMs=parsePenalties(g.away_penalty_misses);
+    const kicks=(sc,ms)=>[...sc.map(n=>`<span class="mf-kick" title="${n}">✅</span>`),...ms.map(n=>`<span class="mf-kick" title="${n}">❌</span>`)].join('');
+    html+=`<div class="mf-pens">
+      <div class="mf-pens-hdr">⚡ Elfmeterschießen · ${hpS}:${apS}</div>
+      <div class="mf-pens-row"><div class="mf-pens-team">${flagFor(h)} ${h}</div><div>${kicks(hPSc,hPMs)}</div></div>
+      <div class="mf-pens-row"><div class="mf-pens-team">${flagFor(a)} ${a}</div><div>${kicks(aPSc,aPMs)}</div></div>
+    </div>`;
+  }
+  html+='</div>';
+  return html;
+}
+function toggleFeed(gid){
+  const el=document.getElementById('mf-'+gid);
+  const chev=document.getElementById('mf-chev-'+gid);
+  if(!el) return;
+  const open=el.style.display==='none'||el.style.display==='';
+  el.style.display=open?'block':'none';
+  if(chev) chev.textContent=open?'▲':'▼';
+}
 function toggleInsight(gid){
   const el=document.getElementById('bi-'+gid);
   const chev=document.getElementById('bi-chev-'+gid);
@@ -1384,9 +1465,14 @@ async function renderBetting(){
   });
   ledgerHtml+='</div>';
 
-  // KO game cards — sorted by kickoff time
+  // KO game cards — live games first, then by kickoff time
   const koSorted=[...koGames].sort((a,b)=>{
     const ka=fixtureLocalToDate(a), kb=fixtureLocalToDate(b);
+    const doneA=String(a.finished).toUpperCase()==='TRUE', doneB=String(b.finished).toUpperCase()==='TRUE';
+    const liveA=!doneA&&(String(a.time_elapsed).toLowerCase()==='live'||(ka&&Date.now()>=ka.getTime()));
+    const liveB=!doneB&&(String(b.time_elapsed).toLowerCase()==='live'||(kb&&Date.now()>=kb.getTime()));
+    if(liveA&&!liveB) return -1;
+    if(!liveA&&liveB) return 1;
     if(!ka&&!kb) return 0; if(!ka) return 1; if(!kb) return -1;
     return ka-kb;
   });
@@ -1409,7 +1495,7 @@ async function renderBetting(){
       const total=hB.length+aB.length;
       const winner=done&&teamsKnown?hs>as_?h:a:null;
       const ko=fixtureLocalToDate(g);
-      const isLive=!done&&ko&&Date.now()>=ko.getTime();
+      const isLive=!done&&(String(g.time_elapsed).toLowerCase()==='live'||(ko&&Date.now()>=ko.getTime()));
 
       let locked=!teamsKnown||done||isLive;
 
@@ -1472,6 +1558,16 @@ async function renderBetting(){
           </div>
         </div>
         ${payoutHtml}
+        ${(()=>{
+          if(!teamsKnown) return '';
+          const hSc=parseScorers(g.home_scorers), aSc=parseScorers(g.away_scorers);
+          const hasPens=parseInt(g.home_penalty_score)||parseInt(g.away_penalty_score);
+          if(isLive) return buildMatchFeed(g,h,a,true);
+          if(done&&(hSc.length+aSc.length>0||hasPens)){
+            return `<button class="mf-toggle" onclick="toggleFeed('${gid}')">⚽ Spielverlauf <span class="mf-chev" id="mf-chev-${gid}">▼</span></button><div id="mf-${gid}" style="display:none">${buildMatchFeed(g,h,a,false)}</div>`;
+          }
+          return '';
+        })()}
         ${teamsKnown?(()=>{
           const hSt=buildTeamStats(h,games);
           const aSt=buildTeamStats(a,games);

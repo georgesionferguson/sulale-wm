@@ -306,7 +306,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-who-label{font-size:13px;font-weight:800;white-space:nowrap;letter-spacing:.02em;}
 .bet-who-bar.unset .bet-who-label{color:var(--navy);}
 .bet-who-bar.chosen .bet-who-label{color:rgba(255,255,255,.6);}
-.bet-who-hint{font-size:12px;font-weight:700;color:var(--navy);opacity:.7;}
+.bet-who-callout{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);border-radius:var(--r);padding:10px 14px;font-size:13px;font-weight:600;color:var(--gold);text-align:center;margin-bottom:1.25rem;margin-top:-.5rem;}
 .bet-who-select{flex:1;border-radius:6px;padding:8px 10px;font-size:14px;font-family:'Inter',sans-serif;outline:none;font-weight:600;}
 .bet-who-bar.unset .bet-who-select{background:#fff;border:none;color:var(--navy);}
 .bet-who-bar.chosen .bet-who-select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);}
@@ -1250,8 +1250,9 @@ async function renderBetting(){
       <option value="">— auswählen —</option>
       ${BET_PLAYERS.map(p=>`<option${betPlayer===p?' selected':''}>${p}</option>`).join('')}
     </select>
-    ${!betPlayer?'<span class="bet-who-hint">← um zu wetten</span>':''}
-  </div>`;
+  </div>
+  ${!betPlayer?`<div class="bet-who-callout">Wähle deinen Namen aus, um eine Wette platzieren zu können.</div>`:''}`;
+
 
   // Two prize pots — built as variable, appended after game cards
   const wcCol=wc?.color||'var(--gold)';

@@ -150,6 +150,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .rank-up{font-size:11px;font-weight:800;color:#16a34a;}
 .rank-dn{font-size:11px;font-weight:800;color:#dc2626;}
 .rank-eq{font-size:11px;color:var(--gray-300);}
+.lb-arrow-note{font-size:11px;color:var(--gray-400);text-align:center;padding:6px 16px 2px;}
 .lb-countries{font-size:11px;color:var(--gray-400);margin-top:2px;display:flex;flex-wrap:wrap;gap:5px;}
 .lb-country-tag{display:inline-flex;align-items:center;gap:3px;}
 .lb-score-col{text-align:right;}
@@ -676,7 +677,7 @@ function renderBoard(){
   const prevRanks={Alicia:1,Vicky:2,Katerina:3,Guillermo:4,Ioannis:5,Melina:6,Vassilis:7,Safak:8,Lydia:9,George:10};
 
   // Standings
-  document.getElementById('lb-table').innerHTML=ranked.map(({p,pts},i)=>{
+  document.getElementById('lb-table').innerHTML=`<div class="lb-arrow-note">▲▼ zeigt Veränderung seit Ende der Gruppenphase</div>`+ranked.map(({p,pts},i)=>{
     const countries=(p.countries||[]).filter(Boolean);
     const tags=countries.map(c=>{
       const ti=tierOf(c); const t=TIERS[ti]||TIERS[3];

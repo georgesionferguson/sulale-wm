@@ -1126,7 +1126,8 @@ function buildTeamStats(teamName,games){
   const scorerCounts={};
   for(const g of games){
     if(String(g.finished).toUpperCase()!=='TRUE') continue;
-    const h=g.home_team_name_en||''; const a=g.away_team_name_en||'';
+    const h=TEAM_ALIASES[g.home_team_name_en]||g.home_team_name_en||'';
+    const a=TEAM_ALIASES[g.away_team_name_en]||g.away_team_name_en||'';
     const isHome=h===teamName; const isAway=a===teamName;
     if(!isHome&&!isAway) continue;
     played++;

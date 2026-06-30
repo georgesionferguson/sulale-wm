@@ -362,8 +362,10 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-chip.lose{background:#fee2e2;color:#991b1b;border-color:#fecaca;opacity:.5;text-decoration:line-through;}
 .bet-vs{padding:12px 4px;font-size:11px;font-weight:700;color:var(--gray-300);display:flex;align-items:center;flex-shrink:0;}
 .bet-pool-note{text-align:center;padding:6px 12px 10px;font-size:11px;color:var(--gray-400);border-top:1px solid var(--gray-100);}
-.bet-insight-toggle{width:100%;background:none;border:none;border-top:1px solid var(--gray-100);padding:8px 14px;font-size:12px;font-weight:700;color:var(--gray-400);cursor:pointer;text-align:left;letter-spacing:.02em;}
-.bet-insight-toggle:hover{color:var(--navy);}
+.bet-insight-toggle{width:100%;background:var(--gray-50,#f8fafc);border:none;border-top:1px solid var(--gray-200);padding:10px 14px;font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;text-align:left;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between;}
+.bet-insight-toggle::after{content:'▾';font-size:14px;color:var(--gray-400);}
+.bet-insight-toggle.open::after{content:'▴';}
+.bet-insight-toggle:hover{background:var(--gray-100,#f1f5f9);}
 .bet-insight{padding:12px 14px;background:#f8fafc;border-top:1px solid var(--gray-100);}
 .bet-insight-team{padding:4px 0 8px;}
 .bet-insight-name{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:5px;}
@@ -1167,7 +1169,7 @@ function toggleInsight(gid){
   if(!el) return;
   const open=el.style.display==='none'||el.style.display==='';
   el.style.display=open?'block':'none';
-  if(btn) btn.textContent=open?'▴ Schließen':'📊 Spielanalyse';
+  if(btn) btn.classList.toggle('open',open);
 }
 
 // ── Betting ───────────────────────────────────────────────

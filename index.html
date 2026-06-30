@@ -672,25 +672,24 @@ function renderBoard(){
     return;
   }
 
-  // Per-round rank movement snapshot
-  // Two slots: _curr (latest) and _prev (before last batch).
-  // When new KO results appear, curr slides to prev and a fresh curr is saved.
+  // Rank movement arrows — baseline = group stage final standings
+  // When new KO results come in, baseline shifts to before that batch.
+  const GROUP_STAGE_RANKS={Alicia:1,Vicky:2,Katerina:3,Guillermo:4,Ioannis:5,Melina:6,Vassilis:7,Safak:8,Lydia:9,George:10};
   const finishedKO=(gamesCache||[]).filter(g=>g.type!=='group'&&g.type!=='third'&&String(g.finished).toUpperCase()==='TRUE').length;
-  let prevRanks=null;
+  let prevRanks=GROUP_STAGE_RANKS;
   try{
     const curr=JSON.parse(localStorage.getItem('sulale_snap_curr')||'null');
     const currRanks={};
     ranked.forEach(({p},i)=>currRanks[p.name]=i+1);
     if(!curr){
-      // First load — just save curr, no arrows yet
       localStorage.setItem('sulale_snap_curr',JSON.stringify({n:finishedKO,ranks:currRanks}));
     } else if(finishedKO>curr.n){
-      // New results in — shift curr → prev, save new curr
+      // New results — slide curr → prev, save fresh curr
       localStorage.setItem('sulale_snap_prev',JSON.stringify(curr));
       localStorage.setItem('sulale_snap_curr',JSON.stringify({n:finishedKO,ranks:currRanks}));
       prevRanks=curr.ranks;
     } else {
-      // No new results — show arrows vs prev
+      // No new results — show arrows vs prev (or group stage if no prev yet)
       const prev=JSON.parse(localStorage.getItem('sulale_snap_prev')||'null');
       if(prev) prevRanks=prev.ranks;
     }

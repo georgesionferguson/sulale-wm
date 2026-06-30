@@ -672,16 +672,28 @@ function renderBoard(){
     return;
   }
 
-  // 24-hour rank movement snapshot
-  const today=new Date().toISOString().slice(0,10);
-  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  // Per-round rank movement snapshot
+  // Two slots: _curr (latest) and _prev (before last batch).
+  // When new KO results appear, curr slides to prev and a fresh curr is saved.
+  const finishedKO=(gamesCache||[]).filter(g=>g.type!=='group'&&g.type!=='third'&&String(g.finished).toUpperCase()==='TRUE').length;
   let prevRanks=null;
   try{
-    const yday=localStorage.getItem('sulale_snap_'+yesterday);
-    if(yday) prevRanks=JSON.parse(yday);
-    const todaySnap={};
-    ranked.forEach(({p},i)=>todaySnap[p.name]=i+1);
-    localStorage.setItem('sulale_snap_'+today,JSON.stringify(todaySnap));
+    const curr=JSON.parse(localStorage.getItem('sulale_snap_curr')||'null');
+    const currRanks={};
+    ranked.forEach(({p},i)=>currRanks[p.name]=i+1);
+    if(!curr){
+      // First load — just save curr, no arrows yet
+      localStorage.setItem('sulale_snap_curr',JSON.stringify({n:finishedKO,ranks:currRanks}));
+    } else if(finishedKO>curr.n){
+      // New results in — shift curr → prev, save new curr
+      localStorage.setItem('sulale_snap_prev',JSON.stringify(curr));
+      localStorage.setItem('sulale_snap_curr',JSON.stringify({n:finishedKO,ranks:currRanks}));
+      prevRanks=curr.ranks;
+    } else {
+      // No new results — show arrows vs prev
+      const prev=JSON.parse(localStorage.getItem('sulale_snap_prev')||'null');
+      if(prev) prevRanks=prev.ranks;
+    }
   }catch(e){}
 
   // Standings

@@ -146,7 +146,10 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .lb-rank-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;background:var(--gray-100);color:var(--gray-600);}
 .lb-rank-num.gold{background:var(--gold);color:var(--navy);}
 .lb-main{flex:1;min-width:0;}
-.lb-player{font-size:15px;font-weight:700;color:var(--gray-900);}
+.lb-player{font-size:15px;font-weight:700;color:var(--gray-900);display:flex;align-items:center;gap:6px;}
+.rank-up{font-size:11px;font-weight:800;color:#16a34a;}
+.rank-dn{font-size:11px;font-weight:800;color:#dc2626;}
+.rank-eq{font-size:11px;color:var(--gray-300);}
 .lb-countries{font-size:11px;color:var(--gray-400);margin-top:2px;display:flex;flex-wrap:wrap;gap:5px;}
 .lb-country-tag{display:inline-flex;align-items:center;gap:3px;}
 .lb-score-col{text-align:right;}
@@ -669,6 +672,18 @@ function renderBoard(){
     return;
   }
 
+  // 24-hour rank movement snapshot
+  const today=new Date().toISOString().slice(0,10);
+  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  let prevRanks=null;
+  try{
+    const yday=localStorage.getItem('sulale_snap_'+yesterday);
+    if(yday) prevRanks=JSON.parse(yday);
+    const todaySnap={};
+    ranked.forEach(({p},i)=>todaySnap[p.name]=i+1);
+    localStorage.setItem('sulale_snap_'+today,JSON.stringify(todaySnap));
+  }catch(e){}
+
   // Standings
   document.getElementById('lb-table').innerHTML=ranked.map(({p,pts},i)=>{
     const countries=(p.countries||[]).filter(Boolean);
@@ -677,10 +692,14 @@ function renderBoard(){
       const cls=['tb1','tb2','tb3','tb4','tb4'][ti]||'tb4';
       return `<span class="lb-country-tag${eliminated.has(c)?' out':''}"><span class="tbadge ${cls}" style="width:18px;height:18px;font-size:9px">${t.short}</span>${FLAGS[c]||''} ${c}</span>`;
     }).join('');
+    const prev=prevRanks?prevRanks[p.name]:null;
+    const curr=i+1;
+    const diff=prev?prev-curr:0;
+    const arrow=diff>0?`<span class="rank-up">▲${diff}</span>`:diff<0?`<span class="rank-dn">▼${Math.abs(diff)}</span>`:prev?`<span class="rank-eq">—</span>`:'';
     return `<div class="lb-row${i===0?' first-place':''}">
       <div class="lb-rank-num${i===0?' gold':''}">${i===0?'★':i+1}</div>
       <div class="lb-main">
-        <div class="lb-player">${p.name}</div>
+        <div class="lb-player">${p.name} ${arrow}</div>
         <div class="lb-countries">${tags||'Draw TBC'}</div>
       </div>
       <div class="lb-score-col">

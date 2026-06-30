@@ -329,6 +329,10 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-status.done{color:rgba(255,255,255,.3);}
 .bet-game.activated{border:2px solid var(--gold);box-shadow:0 0 0 3px rgba(245,197,24,.15),var(--shadow);}
 .bet-game.activated .bet-game-hdr{background:linear-gradient(90deg,var(--navy) 0%,#2a1f00 100%);}
+.bet-live-banner{background:#dc2626;color:#fff;text-align:center;font-size:11px;font-weight:800;padding:5px 14px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.bet-live-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1s infinite;flex-shrink:0;}
+.bet-live-vs{font-size:10px;font-weight:800;color:#dc2626;letter-spacing:.06em;}
+.bet-score.live-score{color:#dc2626;}
 .bet-active-banner{background:var(--gold);color:var(--navy);text-align:center;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;}
 .bet-cols{display:flex;}
 .bet-col{flex:1;padding:12px 10px;text-align:center;}
@@ -1303,13 +1307,14 @@ async function renderBetting(){
       const total=hB.length+aB.length;
       const winner=done&&teamsKnown?hs>as_?h:a:null;
       const ko=fixtureLocalToDate(g);
+      const isLive=!done&&ko&&Date.now()>=ko.getTime();
 
-      let locked=!teamsKnown||done;
-      if(!locked&&ko&&Date.now()>=ko.getTime()) locked=true;
+      let locked=!teamsKnown||done||isLive;
 
       let stTxt=teamsKnown?'Offen':'Noch unbekannt',stCls='pending';
       if(done&&activated){stTxt='Abgerechnet ✓';stCls='done';}
       else if(done){stTxt='Fertig';stCls='done';}
+      else if(isLive){stTxt='🔴 Live';stCls='locked';}
       else if(activated){stTxt=`Aktiv ✓ · €${total}`;stCls='active';}
       else if(locked&&teamsKnown){stTxt='Gesperrt';stCls='locked';}
 
@@ -1342,8 +1347,9 @@ async function renderBetting(){
       }
 
       const koStr=ko?ko.toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      html+=`<div class="bet-game${activated&&!done?' activated':''}">
-        ${activated&&!done?`<div class="bet-active-banner">🔥 Wetten aktiv · €${total} im Topf</div>`:''}
+      html+=`<div class="bet-game${activated&&!done&&!isLive?' activated':''}">
+        ${isLive?`<div class="bet-live-banner"><span class="bet-live-dot"></span>LIVE — Wetten gesperrt</div>`
+          :activated&&!done?`<div class="bet-active-banner">🔥 Wetten aktiv · €${total} im Topf</div>`:''}
         <div class="bet-game-hdr">
           <span class="bet-stage-lbl">${g.type||'KO'}${g.group?' · '+g.group:''}${koStr?` · ${koStr}`:''}</span>
           <span class="bet-status ${stCls}">${stTxt}</span>
@@ -1351,14 +1357,14 @@ async function renderBetting(){
         <div class="bet-cols">
           <div class="bet-col">
             <div class="bet-team">${teamsKnown?flagFor(h)+' ':''}<span style="${!teamsKnown?'color:var(--gray-300)':''}">${h}</span></div>
-            ${done&&teamsKnown?`<div class="bet-score ${winner===h?'won':'lost'}">${hs}</div>`:''}
+            ${(done||isLive)&&teamsKnown?`<div class="bet-score${done?' '+(winner===h?'won':'lost'):' live-score'}">${hs}</div>`:''}
             ${betBtn(h)}
             <div class="bet-chips">${chips(hB,h)}</div>
           </div>
-          <div class="bet-vs">vs</div>
+          <div class="bet-vs">${isLive?'<span class="bet-live-vs">LIVE</span>':'vs'}</div>
           <div class="bet-col">
             <div class="bet-team">${teamsKnown?flagFor(a)+' ':''}<span style="${!teamsKnown?'color:var(--gray-300)':''}">${a}</span></div>
-            ${done&&teamsKnown?`<div class="bet-score ${winner===a?'won':'lost'}">${as_}</div>`:''}
+            ${(done||isLive)&&teamsKnown?`<div class="bet-score${done?' '+(winner===a?'won':'lost'):' live-score'}">${as_}</div>`:''}
             ${betBtn(a)}
             <div class="bet-chips">${chips(aB,a)}</div>
           </div>

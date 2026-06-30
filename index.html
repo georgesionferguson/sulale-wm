@@ -362,6 +362,15 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-chip.lose{background:#fee2e2;color:#991b1b;border-color:#fecaca;opacity:.5;text-decoration:line-through;}
 .bet-vs{padding:12px 4px;font-size:11px;font-weight:700;color:var(--gray-300);display:flex;align-items:center;flex-shrink:0;}
 .bet-pool-note{text-align:center;padding:6px 12px 10px;font-size:11px;color:var(--gray-400);border-top:1px solid var(--gray-100);}
+.bet-insight-toggle{width:100%;background:none;border:none;border-top:1px solid var(--gray-100);padding:8px 14px;font-size:12px;font-weight:700;color:var(--gray-400);cursor:pointer;text-align:left;letter-spacing:.02em;}
+.bet-insight-toggle:hover{color:var(--navy);}
+.bet-insight{padding:12px 14px;background:#f8fafc;border-top:1px solid var(--gray-100);}
+.bet-insight-team{padding:4px 0 8px;}
+.bet-insight-name{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:5px;}
+.bet-insight-bars{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px;}
+.bi-stat{font-size:11px;font-weight:600;background:var(--white);border:1px solid var(--gray-200);border-radius:20px;padding:2px 8px;color:var(--gray-600);}
+.bet-insight-text{font-size:12px;color:var(--gray-600);line-height:1.55;}
+.bet-insight-divider{border-top:1px dashed var(--gray-200);margin:4px 0 12px;}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -1089,6 +1098,101 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&(!lastSync||Date.now()-lastSync.getTime()>20*1000)) syncNow();
 });
 
+// ── Game insights ─────────────────────────────────────────
+const WC_HISTORY={
+  'Argentina':'Three-time World Cup winners (1978, 1986, 2022) — Messi finally claimed his crown in Qatar.',
+  'Brazil':'Five-time winners, the most in history. The most decorated nation the tournament has ever seen.',
+  'France':'Two-time winners (1998, 2018) with a squad that mixes experience and explosive youth.',
+  'England':'Won it once — in 1966 on home soil. Still chasing a second title.',
+  'Spain':'The 2010 winners with their iconic tiki-taka, still technically among the best in the world.',
+  'Portugal':'Reached the semis in 1966 and 2006. Ronaldo\'s era produced moments but never the trophy.',
+  'Morocco':'Made history in 2022 — the first African side ever to reach a World Cup semi-final.',
+  'Netherlands':'Three-time runners-up and still waiting for a first title despite producing football legends.',
+  'Senegal':'Quarter-finals on debut in 2002. Last 16 in 2022. A team that punches above its weight.',
+  'Japan':'Reached the last 16 three times and always a dangerous, organised opponent.',
+  'United States':'Third place at the very first World Cup in 1930, and co-hosts again in 2026.',
+  'Colombia':'Quarter-finals in 2014 behind James Rodríguez\'s iconic Golden Boot campaign.',
+  'Switzerland':'Consistent qualifiers — quarter-finals in 2022 and always hard to beat.',
+  'Croatia':'Runners-up 2018, third place 2022. Modric\'s generation have over-delivered for a nation of 4 million.',
+  'Norway':'Returning after a long World Cup absence, led by Haaland\'s firepower.',
+  'Algeria':'Last 16 in 2014, pushed Germany all the way. Capable of a big run.',
+  'Cape Verde':'One of Africa\'s fast-rising nations, making their mark on the global stage.',
+  'Paraguay':'Quarter-finals in 2010 — never underestimate them in a knockout format.',
+  'Democratic Republic of the Congo':'Appeared as Zaire in 1974 — back on the world stage after decades away.',
+  'Bosnia and Herzegovina':'A young footballing nation — their first World Cup was only in 2014.',
+  'Ecuador':'Last 16 in 2006. Historically difficult opponents for South American rivals.',
+  'Belgium':'Third place in 1986 and 2018 — the Golden Generation never quite closed it out.',
+  'Ghana':'Agonisingly close to the semi-finals in 2010 before Suárez\'s infamous handball on the line.',
+  'Ivory Coast':'Multiple World Cup appearances with some of Africa\'s finest players, still seeking a breakthrough.',
+  'Mexico':'Reached the last 16 seven consecutive times. Now pushing for more.',
+  'Sweden':'Runners-up in 1958 on home soil, beaten by a teenage Pelé. Semi-finals again as recently as 2018.',
+  'Canada':'Co-hosting 2026 and back at the World Cup for the first time since 1986.',
+  'Australia':'Semi-finals in 2006, last 16 in 2022. More dangerous than their ranking suggests.',
+  'Egypt':'Three Africa Cup of Nations but rare World Cup appearances — last featured here in 1990.',
+  'Austria':'Third place in 1954 — still their best ever finish in the tournament.',
+  'South Africa':'First African nation to host the World Cup, back in 2010.',
+  'Germany':'Four-time winners (1954, 1974, 1990, 2014) — historically the model of World Cup consistency.',
+  'Congo DR':'Appeared as Zaire in 1974 — back on the world stage after decades away.',
+};
+
+function buildTeamStats(teamName,games){
+  let gf=0,ga=0,wins=0,losses=0,draws=0,cleanSheets=0,played=0;
+  const scorerCounts={};
+  for(const g of games){
+    if(String(g.finished).toUpperCase()!=='TRUE') continue;
+    const h=g.home_team_name_en||''; const a=g.away_team_name_en||'';
+    const isHome=h===teamName; const isAway=a===teamName;
+    if(!isHome&&!isAway) continue;
+    played++;
+    const myG=parseInt(isHome?g.home_score:g.away_score)||0;
+    const theirG=parseInt(isHome?g.away_score:g.home_score)||0;
+    const myP=parseInt(isHome?g.home_penalty_score:g.away_penalty_score)||0;
+    const theirP=parseInt(isHome?g.away_penalty_score:g.home_penalty_score)||0;
+    gf+=myG; ga+=theirG;
+    if(theirG===0) cleanSheets++;
+    const won=myG>theirG||(myG===theirG&&myP>theirP);
+    const lost=myG<theirG||(myG===theirG&&theirP>myP);
+    if(won) wins++; else if(lost) losses++; else draws++;
+    const sc=(isHome?g.home_scorers:g.away_scorers)||'';
+    const ms=sc.match(/"([^"]+)"/g);
+    if(ms) ms.forEach(m=>{
+      const raw=m.replace(/"/g,'');
+      const name=raw.replace(/\s+\d+[^\s]*$/,'').trim();
+      if(name) scorerCounts[name]=(scorerCounts[name]||0)+1;
+    });
+  }
+  const topScorer=Object.entries(scorerCounts).sort((a,b)=>b[1]-a[1])[0];
+  return {played,wins,draws,losses,gf,ga,cleanSheets,
+    topScorer:topScorer?{name:topScorer[0],goals:topScorer[1]}:null};
+}
+
+function teamInsightText(name,s,history){
+  const parts=[];
+  if(!s.played){
+    parts.push(`${name} haven't played a finished game yet in this tournament.`);
+  } else {
+    const rate=(s.gf/s.played).toFixed(1);
+    const atk=rate>=2.5?'lethal in front of goal':rate>=1.5?'clinical in attack':'measured going forward';
+    parts.push(`${name} have scored ${s.gf} goal${s.gf!==1?'s':''} in ${s.played} game${s.played!==1?'s':''} (${rate} per game) — ${atk}.`);
+    if(s.topScorer&&s.topScorer.goals>=2) parts.push(`${s.topScorer.name} leads their scoring with ${s.topScorer.goals} goals.`);
+    else if(s.topScorer) parts.push(`${s.topScorer.name} has found the net for them.`);
+    if(s.cleanSheets>1) parts.push(`Defensively they've been excellent — ${s.cleanSheets} clean sheets in ${s.played} games.`);
+    else if(s.cleanSheets===1) parts.push(`They've kept ${s.cleanSheets} clean sheet so far.`);
+    else parts.push(`They've conceded ${s.ga} — a defence that can be got at.`);
+  }
+  if(history) parts.push(history);
+  return parts.join(' ');
+}
+
+function toggleInsight(gid){
+  const el=document.getElementById('bi-'+gid);
+  const btn=document.getElementById('bi-btn-'+gid);
+  if(!el) return;
+  const open=el.style.display==='none'||el.style.display==='';
+  el.style.display=open?'block':'none';
+  if(btn) btn.textContent=open?'▴ Schließen':'📊 Spielanalyse';
+}
+
 // ── Betting ───────────────────────────────────────────────
 const SB_URL='https://ubksmbgksmbgylphiich.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3NtYmdrc21iZ3lscGhpaWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjQ3MDYsImV4cCI6MjA5NjYwMDcwNn0._rXQPp5TwXOEpdUVWYzRK1Y8w4DVHOHjPo7V06hoW1M';
@@ -1390,6 +1494,36 @@ async function renderBetting(){
           </div>
         </div>
         ${payoutHtml}
+        ${teamsKnown?(()=>{
+          const hSt=buildTeamStats(h,games);
+          const aSt=buildTeamStats(a,games);
+          const hHist=WC_HISTORY[h]||WC_HISTORY[TEAM_ALIASES[h]||'']||'';
+          const aHist=WC_HISTORY[a]||WC_HISTORY[TEAM_ALIASES[a]||'']||'';
+          return `<button id="bi-btn-${gid}" class="bet-insight-toggle" onclick="toggleInsight('${gid}')">📊 Spielanalyse</button>
+          <div id="bi-${gid}" class="bet-insight" style="display:none">
+            <div class="bet-insight-team">
+              <div class="bet-insight-name">${flagFor(h)} ${h}</div>
+              <div class="bet-insight-bars">
+                <span class="bi-stat">⚽ ${hSt.gf} scored</span>
+                <span class="bi-stat">🛡 ${hSt.ga} conceded</span>
+                ${hSt.cleanSheets?`<span class="bi-stat">🔒 ${hSt.cleanSheets} CS</span>`:''}
+                <span class="bi-stat">W${hSt.wins} D${hSt.draws} L${hSt.losses}</span>
+              </div>
+              <div class="bet-insight-text">${teamInsightText(h,hSt,hHist)}</div>
+            </div>
+            <div class="bet-insight-divider"></div>
+            <div class="bet-insight-team">
+              <div class="bet-insight-name">${flagFor(a)} ${a}</div>
+              <div class="bet-insight-bars">
+                <span class="bi-stat">⚽ ${aSt.gf} scored</span>
+                <span class="bi-stat">🛡 ${aSt.ga} conceded</span>
+                ${aSt.cleanSheets?`<span class="bi-stat">🔒 ${aSt.cleanSheets} CS</span>`:''}
+                <span class="bi-stat">W${aSt.wins} D${aSt.draws} L${aSt.losses}</span>
+              </div>
+              <div class="bet-insight-text">${teamInsightText(a,aSt,aHist)}</div>
+            </div>
+          </div>`;
+        })():''}
       </div>`;
     });
   }

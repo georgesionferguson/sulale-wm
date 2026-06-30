@@ -677,7 +677,7 @@ function renderBoard(){
   const prevRanks={Alicia:1,Vicky:2,Katerina:3,Guillermo:4,Ioannis:5,Melina:6,Vassilis:7,Safak:8,Lydia:9,George:10};
 
   // Standings
-  document.getElementById('lb-table').innerHTML=`<div class="lb-arrow-note">▲▼ zeigt Veränderung seit Ende der Gruppenphase</div>`+ranked.map(({p,pts},i)=>{
+  document.getElementById('lb-table').innerHTML=ranked.map(({p,pts},i)=>{
     const countries=(p.countries||[]).filter(Boolean);
     const tags=countries.map(c=>{
       const ti=tierOf(c); const t=TIERS[ti]||TIERS[3];
@@ -699,7 +699,7 @@ function renderBoard(){
         <div class="lb-pts-label">pts</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('')+`<div class="lb-arrow-note">▲▼ zeigt Veränderung seit Ende der Gruppenphase</div>`;
 
   if(lastSync) document.getElementById('board-sync-label').textContent='Last sync: '+lastSync.toLocaleTimeString();
 }

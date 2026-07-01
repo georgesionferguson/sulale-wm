@@ -362,16 +362,6 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-chip.lose{background:#fee2e2;color:#991b1b;border-color:#fecaca;opacity:.5;text-decoration:line-through;}
 .bet-vs{padding:12px 4px;font-size:11px;font-weight:700;color:var(--gray-300);display:flex;align-items:center;flex-shrink:0;}
 .bet-pool-note{text-align:center;padding:6px 12px 10px;font-size:11px;color:var(--gray-400);border-top:1px solid var(--gray-100);}
-.bet-insight-toggle{width:100%;background:#f8fafc;border:none;border-top:1px solid var(--gray-200);padding:10px 14px;font-size:12px;font-weight:700;color:var(--navy);cursor:pointer;text-align:left;letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between;}
-.bet-insight-toggle:hover{background:#f1f5f9;}
-.bi-chevron{font-size:13px;color:var(--navy);font-weight:900;}
-.bet-insight{padding:12px 14px;background:#f8fafc;border-top:1px solid var(--gray-100);}
-.bet-insight-team{padding:4px 0 8px;}
-.bet-insight-name{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:5px;}
-.bet-insight-bars{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:7px;}
-.bi-stat{font-size:11px;font-weight:600;background:var(--white);border:1px solid var(--gray-200);border-radius:20px;padding:2px 8px;color:var(--gray-600);}
-.bet-insight-text{font-size:12px;color:var(--gray-600);line-height:1.55;}
-.bet-insight-divider{border-top:1px dashed var(--gray-200);margin:4px 0 12px;}
 /* Match feed / live timeline */
 .mf-wrap{background:var(--white);border-top:1px solid var(--gray-200);}
 .mf-live-hdr{display:flex;align-items:center;gap:7px;padding:8px 14px;background:#fff7ed;border-bottom:1px solid #fed7aa;font-size:11px;font-weight:800;color:#c2410c;letter-spacing:.06em;text-transform:uppercase;}
@@ -1121,68 +1111,6 @@ document.addEventListener('visibilitychange',()=>{
 
 // ── Game insights ─────────────────────────────────────────
 
-function buildTeamStats(teamName,games){
-  let gf=0,ga=0,wins=0,losses=0,draws=0,cleanSheets=0,played=0;
-  const scorerCounts={};
-  for(const g of games){
-    if(String(g.finished).toUpperCase()!=='TRUE') continue;
-    const h=TEAM_ALIASES[g.home_team_name_en]||g.home_team_name_en||'';
-    const a=TEAM_ALIASES[g.away_team_name_en]||g.away_team_name_en||'';
-    const isHome=h===teamName; const isAway=a===teamName;
-    if(!isHome&&!isAway) continue;
-    played++;
-    const myG=parseInt(isHome?g.home_score:g.away_score)||0;
-    const theirG=parseInt(isHome?g.away_score:g.home_score)||0;
-    const myP=parseInt(isHome?g.home_penalty_score:g.away_penalty_score)||0;
-    const theirP=parseInt(isHome?g.away_penalty_score:g.home_penalty_score)||0;
-    gf+=myG; ga+=theirG;
-    if(theirG===0) cleanSheets++;
-    const won=myG>theirG||(myG===theirG&&myP>theirP);
-    const lost=myG<theirG||(myG===theirG&&theirP>myP);
-    if(won) wins++; else if(lost) losses++; else draws++;
-    const sc=(isHome?g.home_scorers:g.away_scorers)||'';
-    const ms=sc.match(/"([^"]+)"/g);
-    if(ms) ms.forEach(m=>{
-      const raw=m.replace(/"/g,'');
-      const name=raw.replace(/\s+\d+[^\s]*$/,'').trim();
-      if(name) scorerCounts[name]=(scorerCounts[name]||0)+1;
-    });
-  }
-  const topScorer=Object.entries(scorerCounts).sort((a,b)=>b[1]-a[1])[0];
-  return {played,wins,draws,losses,gf,ga,cleanSheets,
-    topScorer:topScorer?{name:topScorer[0],goals:topScorer[1]}:null};
-}
-
-function teamInsightText(name,s,allStats){
-  const parts=[];
-  if(!s.played){
-    parts.push(`${name} hat in diesem Turnier noch kein abgeschlossenes Spiel bestritten.`);
-    return parts.join(' ');
-  }
-  // Attack
-  const rate=s.played?(s.gf/s.played):0;
-  const allRates=Object.values(allStats).filter(x=>x.played>0).map(x=>x.gf/x.played);
-  const avgRate=allRates.length?allRates.reduce((a,b)=>a+b,0)/allRates.length:1.5;
-  const atkAdj=rate>=avgRate*1.5?'außergewöhnlich torgefährlich':rate>=avgRate?'überdurchschnittlich effektiv im Abschluss':'bisher zurückhaltend im Abschluss';
-  parts.push(`${name} hat ${s.gf} Tor${s.gf!==1?'e':''} in ${s.played} Spiel${s.played!==1?'en':''} erzielt (⌀ ${rate.toFixed(1)} pro Spiel) — ${atkAdj}.`);
-  // Top scorer
-  if(s.topScorer&&s.topScorer.goals>=3) parts.push(`${s.topScorer.name} ist in herausragender Form und hat bereits ${s.topScorer.goals} Treffer erzielt.`);
-  else if(s.topScorer&&s.topScorer.goals>=2) parts.push(`${s.topScorer.name} führt die Torjägerliste des Teams mit ${s.topScorer.goals} Toren an.`);
-  else if(s.topScorer) parts.push(`${s.topScorer.name} hat für das Team getroffen.`);
-  // Defence
-  const allGA=Object.values(allStats).filter(x=>x.played>0).map(x=>x.ga/x.played);
-  const avgGA=allGA.length?allGA.reduce((a,b)=>a+b,0)/allGA.length:1.2;
-  const gaRate=s.played?s.ga/s.played:0;
-  if(s.cleanSheets>=2) parts.push(`Defensiv absolut zuverlässig — ${s.cleanSheets} Zu-Null-Spiele in ${s.played} Partien.`);
-  else if(s.cleanSheets===1) parts.push(`Ein Zu-Null-Spiel steht in der Bilanz — die Defensive kann durchaus Stabilität zeigen.`);
-  else if(gaRate<avgGA) parts.push(`Mit ${s.ga} Gegentor${s.ga!==1?'en':''} liegt die Defensive unter dem Turniersdurchschnitt — solide.`);
-  else parts.push(`${s.ga} Gegentor${s.ga!==1?'e':''} kassiert — eine Defensive, die zu knacken ist.`);
-  // Win record
-  if(s.wins===s.played&&s.played>=2) parts.push(`Makellose Bilanz: alle ${s.played} Spiele gewonnen.`);
-  else if(s.losses===s.played&&s.played>=2) parts.push(`Alle Spiele verloren — kommen hier nur wegen Tordifferenz weiter.`);
-  return parts.join(' ');
-}
-
 function parseScorers(raw){
   if(!raw||raw==='null') return [];
   const m=String(raw).match(/"([^"]+)"/g);
@@ -1244,15 +1172,6 @@ function toggleFeed(gid){
   el.style.display=open?'block':'none';
   if(chev) chev.textContent=open?'▲':'▼';
 }
-function toggleInsight(gid){
-  const el=document.getElementById('bi-'+gid);
-  const chev=document.getElementById('bi-chev-'+gid);
-  if(!el) return;
-  const open=el.style.display==='none'||el.style.display==='';
-  el.style.display=open?'block':'none';
-  if(chev) chev.textContent=open?'▲':'▼';
-}
-
 // ── Betting ───────────────────────────────────────────────
 const SB_URL='https://ubksmbgksmbgylphiich.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3NtYmdrc21iZ3lscGhpaWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjQ3MDYsImV4cCI6MjA5NjYwMDcwNn0._rXQPp5TwXOEpdUVWYzRK1Y8w4DVHOHjPo7V06hoW1M';
@@ -1569,29 +1488,6 @@ async function renderBetting(){
           }
           return '';
         })()}
-        ${teamsKnown?(()=>{
-          const hSt=buildTeamStats(h,games);
-          const aSt=buildTeamStats(a,games);
-          const allSt={[h]:hSt,[a]:aSt};
-          const pill=(n,emoji)=>`<span class="bi-stat">${emoji} ${n}</span>`;
-          const teamBlock=(nm,st)=>`
-            <div class="bet-insight-team">
-              <div class="bet-insight-name">${flagFor(nm)} ${nm}</div>
-              <div class="bet-insight-bars">
-                ${pill(st.gf+' Tore','⚽')}
-                ${pill(st.ga+' kassiert','🛡')}
-                ${st.cleanSheets?pill(st.cleanSheets+' Zu-Null','🔒'):''}
-                ${pill('S'+st.wins+' U'+st.draws+' N'+st.losses,'📋')}
-              </div>
-              <div class="bet-insight-text">${teamInsightText(nm,st,allSt)}</div>
-            </div>`;
-          return `<button id="bi-btn-${gid}" class="bet-insight-toggle" onclick="toggleInsight('${gid}')">📊 Spielanalyse <span class="bi-chevron" id="bi-chev-${gid}">▼</span></button>
-          <div id="bi-${gid}" class="bet-insight" style="display:none">
-            ${teamBlock(h,hSt)}
-            <div class="bet-insight-divider"></div>
-            ${teamBlock(a,aSt)}
-          </div>`;
-        })():''}
       </div>`;
     });
   }

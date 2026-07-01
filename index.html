@@ -1194,9 +1194,9 @@ async function loadBets(){
 }
 
 async function saveBetRow(gameId,player,team){
-  const r=await fetch(`${SB_URL}/rest/v1/sulale_bets`,{
+  const r=await fetch(`${SB_URL}/rest/v1/sulale_bets?on_conflict=game_id,player`,{
     method:'POST',
-    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json',Prefer:'return=representation'},
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=representation'},
     body:JSON.stringify({game_id:String(gameId),player,team})
   });
   if(!r.ok) throw new Error(await r.text());

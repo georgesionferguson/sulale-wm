@@ -527,6 +527,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
   </div>
 
   <!-- Top stats -->
+  <div id="lb-ceremony"></div>
   <div class="lb-hero">
     <div class="hero-stat">
       <div class="hero-stat-label">Points Champion leader</div>
@@ -721,6 +722,18 @@ function calcPlayerPts(p){
 
 function renderBoard(){
   const ranked=[...S.players].map(p=>({p,pts:calcPlayerPts(p)})).sort((a,b)=>b.pts-a.pts);
+
+  // Ceremony screen on leaderboard tab when final is done
+  const lbCeremonyEl=document.getElementById('lb-ceremony');
+  if(lbCeremonyEl){
+    const finalDone=gamesCache.some(g=>g.type==='final'&&String(g.finished).toUpperCase()==='TRUE');
+    if(finalDone){
+      const pl=calcBettingPL(gamesCache);
+      lbCeremonyEl.innerHTML=buildCeremonyHtml(pl,wcWinnerInfo(),gamesCache);
+    } else {
+      lbCeremonyEl.innerHTML='';
+    }
+  }
 
   // Hero stats
   document.getElementById('gb-name').textContent=ranked[0]?.p.name||'—';
@@ -1628,7 +1641,7 @@ async function renderBetting(){
       const winner=done&&teamsKnown?(hs>as_?h:(as_>hs?a:(hp2>ap2?h:(ap2>hp2?a:null)))):null;
       const ko=fixtureLocalToDate(g);
       const isLive=!done&&(String(g.time_elapsed).toLowerCase()==='live'||(ko&&Date.now()>=ko.getTime()));
-      const isHighStakes=g.type==='sf'||g.type==='final';
+      const isHighStakes=g.type==='sf'||g.type==='final'||g.type==='third';
       const hStakeTotal=hB.reduce((s,b)=>s+(b.stake||1),0);
       const aStakeTotal=aB.reduce((s,b)=>s+(b.stake||1),0);
       const stakePot=hStakeTotal+aStakeTotal;

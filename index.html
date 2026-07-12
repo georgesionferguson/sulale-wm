@@ -1367,7 +1367,7 @@ async function renderBetting(){
   });
 
   // Only show KO games that are either scheduled (team IDs assigned) or finished
-  const koGames=games.filter(g=>g.type!=='group'&&(g.home_team_id!=='0'||g.away_team_id!=='0'||String(g.finished).toUpperCase()==='TRUE'));
+  const koGames=games.filter(g=>['sf','third','final'].includes(g.type)&&(g.home_team_id!=='0'||g.away_team_id!=='0'||String(g.finished).toUpperCase()==='TRUE'));
   const pl=calcBettingPL(games);
   const wc=wcWinnerInfo();
   const leader=currentLeaderInfo();

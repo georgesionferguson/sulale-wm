@@ -379,6 +379,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .ceremony-owner{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:2rem;}
 .ceremony-winner-name{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.1em;margin-top:.1rem;}
 .ceremony-winner-block{text-align:center;}
+.ceremony-congrats{font-size:14px;color:rgba(255,255,255,.65);margin-top:.5rem;font-style:italic;letter-spacing:.03em;}
 .ceremony-podium{display:flex;justify-content:center;gap:.75rem;align-items:flex-end;margin-bottom:1.5rem;}
 .cp-pos{text-align:center;border-radius:10px;padding:.6rem .75rem .75rem;background:rgba(255,255,255,.05);min-width:80px;}
 .cp-pos.p1{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);padding:.9rem .75rem 1rem;order:2;}
@@ -1504,8 +1505,9 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
       <div class="ceremony-trophy">🏆</div>
       <div class="ceremony-eyebrow">Weltmeister 2026</div>
       <div class="ceremony-title">${flagFor(wcTeam)} ${wcTeam}</div>
-      <div class="ceremony-eyebrow" style="margin-top:1.2rem;margin-bottom:.4rem;font-size:.75rem">Tipp-Gewinner</div>
+      <div class="ceremony-eyebrow" style="margin-top:1.4rem;margin-bottom:.4rem;font-size:.75rem">Tipp-Gewinner</div>
       <div class="ceremony-winner-name" style="color:${wcOwnerColor}">${wc.owner}</div>
+      <div class="ceremony-congrats">Glückwunsch, ${wc.owner}! 🎉</div>
     </div>`:`
     <div class="ceremony-winner-block">
       <div class="ceremony-trophy">🏆</div>
@@ -1533,13 +1535,22 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
     </div>`;
   }).join('');
 
-  const section2label=showPts?'Punkte-Champion':'Wett-Ergebnis';
-  const section2icon=showPts?'⭐':'💶';
+  const ptsChampion=sorted[0];
+  const ptsChampionColor=PLAYER_COLORS[ptsChampion?.name]||ptsChampion?.color||'#f5c518';
 
-  const section2=`
+  const section2label=showPts?'Wett-Ergebnis':'Wett-Ergebnis';
+  const section2=showPts?`
     <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
-      <div class="ceremony-trophy">${section2icon}</div>
-      <div class="ceremony-eyebrow">${section2label}</div>
+      <div class="ceremony-trophy">⭐</div>
+      <div class="ceremony-eyebrow" style="margin-bottom:.5rem">Und euer Punkte-Champion der WM 2026 ist…</div>
+      <div class="ceremony-winner-name" style="color:${ptsChampionColor}">${ptsChampion?.name||''}</div>
+      <div class="ceremony-congrats">Glückwunsch, ${ptsChampion?.name||''}! 🏅</div>
+      <div class="ceremony-podium" style="margin-top:1.5rem">${podium}</div>
+      <div class="ceremony-rest">${rest}</div>
+    </div>`:`
+    <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
+      <div class="ceremony-trophy">💶</div>
+      <div class="ceremony-eyebrow">Wett-Ergebnis</div>
       <div class="ceremony-podium">${podium}</div>
       <div class="ceremony-rest">${rest}</div>
     </div>`;

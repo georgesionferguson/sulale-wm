@@ -367,6 +367,30 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-chip.lose{background:#fee2e2;color:#991b1b;border-color:#fecaca;opacity:.5;text-decoration:line-through;}
 .bet-vs{padding:12px 4px;font-size:11px;font-weight:700;color:var(--gray-300);display:flex;align-items:center;flex-shrink:0;}
 .bet-pool-note{text-align:center;padding:6px 12px 10px;font-size:11px;color:var(--gray-400);border-top:1px solid var(--gray-100);}
+.ceremony{background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 60%,#0f172a 100%);border-radius:var(--r);overflow:hidden;position:relative;margin-bottom:1.5rem;}
+.ceremony-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.cp{position:absolute;border-radius:2px;animation:cp-fall linear infinite;opacity:.9;}
+@keyframes cp-fall{0%{transform:translateY(-30px) rotate(0deg);opacity:1;}100%{transform:translateY(500px) rotate(800deg);opacity:0;}}
+.ceremony-inner{position:relative;z-index:2;padding:2.5rem 1.5rem 2rem;text-align:center;}
+.ceremony-trophy{font-size:72px;line-height:1;filter:drop-shadow(0 0 24px rgba(245,197,24,.7));margin-bottom:.5rem;}
+.ceremony-eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.4rem;}
+.ceremony-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:.12em;color:var(--gold);line-height:1;margin-bottom:.25rem;}
+.ceremony-team{font-size:26px;font-weight:800;color:#fff;margin-bottom:.15rem;}
+.ceremony-owner{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:2rem;}
+.ceremony-podium{display:flex;justify-content:center;gap:.75rem;align-items:flex-end;margin-bottom:1.5rem;}
+.cp-pos{text-align:center;border-radius:10px;padding:.6rem .75rem .75rem;background:rgba(255,255,255,.05);min-width:80px;}
+.cp-pos.p1{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);padding:.9rem .75rem 1rem;order:2;}
+.cp-pos.p2{order:1;}
+.cp-pos.p3{order:3;}
+.cp-medal{font-size:26px;display:block;margin-bottom:4px;}
+.cp-name{font-size:12px;font-weight:700;color:#fff;margin-bottom:2px;}
+.cp-net{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);}
+.ceremony-rest{border-top:1px solid rgba(255,255,255,.08);padding-top:1rem;display:flex;flex-direction:column;gap:4px;}
+.ceremony-row{display:flex;align-items:center;gap:8px;padding:4px 1rem;font-size:12px;}
+.ceremony-row-rank{color:rgba(255,255,255,.3);width:18px;text-align:right;font-weight:700;}
+.ceremony-row-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ceremony-row-name{color:rgba(255,255,255,.7);flex:1;text-align:left;}
+.ceremony-row-val{font-weight:700;color:var(--gold);}
 .side-bet-section{border-top:1px solid var(--gray-100);padding:6px 12px 8px;}
 .side-bet-hdr{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gray-400);margin-bottom:5px;}
 .side-bet-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:3px 0;gap:6px;}
@@ -1427,6 +1451,70 @@ function setBetPlayer(name){
   renderBetting();
 }
 
+function buildCeremonyHtml(pl, wc, games){
+  const tidMap={};
+  games.filter(g=>g.type==='group').forEach(g=>{
+    const h=g.home_team_name_en||g.home_team_en||null;
+    const a=g.away_team_name_en||g.away_team_en||null;
+    if(h&&g.home_team_id&&g.home_team_id!=='0') tidMap[g.home_team_id]=TEAM_ALIASES[h]||h;
+    if(a&&g.away_team_id&&g.away_team_id!=='0') tidMap[g.away_team_id]=TEAM_ALIASES[a]||a;
+  });
+  const finalGame=games.find(g=>g.type==='final'&&String(g.finished).toUpperCase()==='TRUE');
+  if(!finalGame) return '';
+  const hs=parseInt(finalGame.home_score)||0,as_=parseInt(finalGame.away_score)||0;
+  const hp=parseInt(finalGame.home_penalty_score)||0,ap=parseInt(finalGame.away_penalty_score)||0;
+  const h=(tidMap[finalGame.home_team_id]||'').trim(),a=(tidMap[finalGame.away_team_id]||'').trim();
+  const wcTeam=hs>as_?h:(as_>hs?a:(hp>ap?h:(ap>hp?a:null)));
+  if(!wcTeam) return '';
+
+  const sorted=BET_PLAYERS.map(p=>({name:p,net:pl[p]?.net||0})).sort((a,b)=>b.net-a.net);
+  const medals=['🥇','🥈','🥉'];
+  const colors=['#f5c518','#ef4444','#22c55e','#3b82f6','#a855f7','#f97316','#ec4899','#ffffff','#14b8a6','#64748b'];
+
+  // Confetti
+  let confetti='';
+  for(let i=0;i<50;i++){
+    const c=colors[i%colors.length];
+    const left=(Math.random()*100).toFixed(1);
+    const delay=(Math.random()*4).toFixed(2);
+    const dur=(2.5+Math.random()*3).toFixed(2);
+    const sz=(5+Math.random()*8).toFixed(0);
+    confetti+=`<div class="cp" style="left:${left}%;background:${c};width:${sz}px;height:${sz}px;animation-duration:${dur}s;animation-delay:-${delay}s;"></div>`;
+  }
+
+  // Podium (top 3)
+  const podium=sorted.slice(0,3).map((p,i)=>`
+    <div class="cp-pos p${i+1}">
+      <span class="cp-medal">${medals[i]}</span>
+      <div class="cp-name">${p.name}</div>
+      <div class="cp-net">${p.net>=0?'+':''}€${p.net.toFixed(2)}</div>
+    </div>`).join('');
+
+  // Rest
+  const rest=sorted.slice(3).map((p,i)=>`
+    <div class="ceremony-row">
+      <span class="ceremony-row-rank">${i+4}</span>
+      <span class="ceremony-row-dot" style="background:${PLAYER_COLORS[p.name]||'#888'}"></span>
+      <span class="ceremony-row-name">${p.name}</span>
+      <span class="ceremony-row-val">${p.net>=0?'+':''}€${p.net.toFixed(2)}</span>
+    </div>`).join('');
+
+  const ownerLine=wc?.owner?`→ ${wc.owner} gewinnt €50`:'';
+
+  return `<div class="ceremony">
+    <div class="ceremony-confetti">${confetti}</div>
+    <div class="ceremony-inner">
+      <div class="ceremony-trophy">🏆</div>
+      <div class="ceremony-eyebrow">Weltmeister 2026</div>
+      <div class="ceremony-title">${flagFor(wcTeam)} ${wcTeam}</div>
+      <div class="ceremony-owner">${ownerLine}</div>
+      <div class="ceremony-eyebrow" style="margin-bottom:1rem">Wett-Ergebnis</div>
+      <div class="ceremony-podium">${podium}</div>
+      <div class="ceremony-rest">${rest}</div>
+    </div>
+  </div>`;
+}
+
 async function renderBetting(){
   const el=document.getElementById('betting');
   el.innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray-400);font-size:13px;">Lade…</div>';
@@ -1456,7 +1544,10 @@ async function renderBetting(){
   const pl=calcBettingPL(games);
   const wc=wcWinnerInfo();
   const leader=currentLeaderInfo();
+  const finalDone=games.some(g=>g.type==='final'&&String(g.finished).toUpperCase()==='TRUE');
   let html='';
+
+  if(finalDone) html+=buildCeremonyHtml(pl,wc,games);
 
   // Player selector
   html+=`<div class="bet-who-bar ${betPlayer?'chosen':'unset'}">

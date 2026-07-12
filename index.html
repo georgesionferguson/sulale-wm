@@ -1539,13 +1539,7 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
   const ptsChampion=sorted[0];
   const ptsLast=sorted[sorted.length-1];
   const ptsChampionColor=PLAYER_COLORS[ptsChampion?.name]||ptsChampion?.color||'#f5c518';
-  const georgeJokes=[
-    'George finished last. His teams played hard. He just didn\'t pick any of them. 🤷',
-    'A special shoutout to George, who managed to watch every single game and still end up last. Truly an achievement. 🥄',
-    'George: came, watched, lost. The full experience. 🥄',
-    'Last place goes to George — proof that enthusiasm and knowledge are very different things. 🥄',
-  ];
-  const georgeJoke=georgeJokes[Math.floor(Math.random()*georgeJokes.length)];
+  const georgeJoke='In last place, George — the most emotionally invested person in this group, which somehow made it worse.';
   const woodenSpoon=showPts&&ptsLast?.name==='George'?`
     <div class="ceremony-wooden-spoon">
       <span>🥄</span> ${georgeJoke}

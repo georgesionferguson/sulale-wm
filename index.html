@@ -367,6 +367,19 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-chip.lose{background:#fee2e2;color:#991b1b;border-color:#fecaca;opacity:.5;text-decoration:line-through;}
 .bet-vs{padding:12px 4px;font-size:11px;font-weight:700;color:var(--gray-300);display:flex;align-items:center;flex-shrink:0;}
 .bet-pool-note{text-align:center;padding:6px 12px 10px;font-size:11px;color:var(--gray-400);border-top:1px solid var(--gray-100);}
+.side-bet-section{border-top:1px solid var(--gray-100);padding:6px 12px 8px;}
+.side-bet-hdr{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gray-400);margin-bottom:5px;}
+.side-bet-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:3px 0;gap:6px;}
+.side-bet-pill{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;white-space:nowrap;}
+.side-bet-pill.pending{background:#fef3c7;color:#92400e;}
+.side-bet-pill.accepted{background:#dbeafe;color:#1e40af;}
+.side-bet-pill.win{background:#d1fae5;color:#065f46;}
+.side-bet-pill.lose{background:#fee2e2;color:#991b1b;text-decoration:line-through;}
+.challenge-btn{display:block;width:100%;margin-top:5px;padding:5px;border:1px dashed var(--gray-300);border-radius:6px;background:none;cursor:pointer;font-size:11px;color:var(--gray-400);font-family:'Inter',sans-serif;}
+.challenge-btn:hover{border-color:var(--gold);color:var(--navy);}
+.challenge-form{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center;}
+.challenge-form select{font-size:11px;padding:4px 6px;border:1px solid var(--gray-200);border-radius:5px;background:var(--white);}
+.challenge-form .stake-btn{padding:4px 10px;font-size:11px;}
 /* Match feed / live timeline */
 .mf-wrap{background:var(--white);border-top:1px solid var(--gray-200);}
 .mf-live-hdr{display:flex;align-items:center;gap:7px;padding:8px 14px;background:#fff7ed;border-bottom:1px solid #fed7aa;font-size:11px;font-weight:800;color:#c2410c;letter-spacing:.06em;text-transform:uppercase;}
@@ -1196,15 +1209,74 @@ const PLAYER_COLORS={
 };
 
 let allBets=[],betPlayer=null,betsLoaded=false;
+let allSideBets=[],sideBetsLoaded=false;
+let challengeFormGame=null;
 
 async function loadBets(){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/sulale_bets?select=*&order=created_at.asc`,{
-      headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}
-    });
-    if(r.ok){allBets=await r.json();betsLoaded=true;}
+    const [r1,r2]=await Promise.all([
+      fetch(`${SB_URL}/rest/v1/sulale_bets?select=*&order=created_at.asc`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}}),
+      fetch(`${SB_URL}/rest/v1/sulale_side_bets?select=*&order=created_at.asc`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}})
+    ]);
+    if(r1.ok){allBets=await r1.json();betsLoaded=true;}
+    if(r2.ok){allSideBets=await r2.json();sideBetsLoaded=true;}
   }catch(e){}
 }
+
+async function createSideBet(gameId,challenged,challengerTeam,amount){
+  const r=await fetch(`${SB_URL}/rest/v1/sulale_side_bets`,{
+    method:'POST',
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json',Prefer:'return=representation'},
+    body:JSON.stringify({game_id:String(gameId),challenger:betPlayer,challenger_team:challengerTeam,challenged,amount})
+  });
+  if(!r.ok) throw new Error(await r.text());
+  const [row]=await r.json();
+  allSideBets=[...allSideBets,row];
+}
+
+async function respondSideBet(id,status){
+  const r=await fetch(`${SB_URL}/rest/v1/sulale_side_bets?id=eq.${id}`,{
+    method:'PATCH',
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`,'Content-Type':'application/json'},
+    body:JSON.stringify({status})
+  });
+  if(!r.ok) throw new Error(await r.text());
+  const sb=allSideBets.find(x=>x.id===id);
+  if(sb) sb.status=status;
+}
+
+async function cancelSideBet(id){
+  await fetch(`${SB_URL}/rest/v1/sulale_side_bets?id=eq.${id}`,{
+    method:'DELETE',
+    headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}
+  });
+  allSideBets=allSideBets.filter(x=>x.id!==id);
+}
+
+async function handleRespondSideBet(id,status){
+  try{ await respondSideBet(id,status); }catch(e){ alert('Fehler: '+e.message); }
+  renderBetting();
+}
+
+async function handleCancelSideBet(id){
+  try{ await cancelSideBet(id); }catch(e){ alert('Fehler: '+e.message); }
+  renderBetting();
+}
+
+async function handleSubmitChallenge(gameId){
+  const opp=document.getElementById('cf-opp-'+gameId)?.value;
+  const team=document.getElementById('cf-team-'+gameId)?.value;
+  const amount=parseInt(document.getElementById('cf-amt-'+gameId)?.value);
+  if(!opp||!team||!amount) return;
+  try{
+    await createSideBet(gameId,opp,team,amount);
+    challengeFormGame=null;
+  }catch(e){ alert('Fehler: '+e.message); }
+  renderBetting();
+}
+
+function openChallengeForm(gameId){ challengeFormGame=gameId; renderBetting(); }
+function closeChallengeForm(){ challengeFormGame=null; renderBetting(); }
 
 async function saveBetRow(gameId,player,team,stake){
   const r=await fetch(`${SB_URL}/rest/v1/sulale_bets?on_conflict=game_id,player`,{
@@ -1295,6 +1367,20 @@ function calcBettingPL(games){
       }
     }
   });
+  // Side bet P&L
+  allSideBets.filter(sb=>sb.status==='accepted').forEach(sb=>{
+    const g=games.find(g=>String(g.id)===String(sb.game_id));
+    if(!g||String(g.finished).toUpperCase()!=='TRUE') return;
+    const hs=parseInt(g.home_score)||0,as_=parseInt(g.away_score)||0;
+    const hp=parseInt(g.home_penalty_score)||0,ap=parseInt(g.away_penalty_score)||0;
+    const h=(tidMap[g.home_team_id]||'').trim(),a2=(tidMap[g.away_team_id]||'').trim();
+    const winner=hs>as_?h:(as_>hs?a2:(hp>ap?h:(ap>hp?a2:null)));
+    if(!winner) return;
+    const cWins=winner===sb.challenger_team;
+    if(pl[sb.challenger]){pl[sb.challenger].net+=cWins?sb.amount:-sb.amount;if(cWins)pl[sb.challenger].won+=sb.amount;}
+    if(pl[sb.challenged]){pl[sb.challenged].net+=cWins?-sb.amount:sb.amount;if(!cWins)pl[sb.challenged].won+=sb.amount;}
+  });
+
   return pl;
 }
 
@@ -1327,8 +1413,7 @@ async function handleBet(gameId,team,stake){
   }
   const existing=allBets.find(b=>b.game_id===String(gameId)&&b.player===betPlayer);
   try{
-    // Withdraw if clicking same team+stake; otherwise upsert (handles stake changes too)
-    if(existing&&existing.team===team&&(existing.stake||1)===(stake||1)) await deleteBetRow(gameId,betPlayer);
+    if(existing&&existing.team===team) await deleteBetRow(gameId,betPlayer);
     else await saveBetRow(gameId,betPlayer,team,stake||1);
   }catch(e){
     alert('Fehler: '+e.message);
@@ -1406,7 +1491,7 @@ async function renderBetting(){
   const sorted=[...BET_PLAYERS].sort((a,b)=>pl[b].net-pl[a].net);
   let ledgerHtml=`<div class="bet-ledger" style="margin-top:1.25rem"><div class="bet-ledger-hdr">
     <span style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)">Wett-Ergebnis</span>
-    <span style="font-size:11px;color:rgba(255,255,255,.35)">€1 pro Spiel</span>
+    <span style="font-size:11px;color:rgba(255,255,255,.35)">€1 KO · €2 Halbfinale/Finale</span>
   </div>`;
   sorted.forEach(p=>{
     const v=pl[p], cls=v.net>0?'pos':v.net<0?'neg':'even';
@@ -1478,14 +1563,10 @@ async function renderBetting(){
           </button>`;
         }
         if(myBet) return '';
-        if(!isHighStakes){
-          return `<button class="bet-btn" onclick="handleBet('${gid}','${team.replace(/'/g,"\\'")}',1);this.disabled=true">
-            €1 setzen
-          </button>`;
-        }
-        return `<div class="stake-picker">
-          ${[1,2,3,5].map(s=>`<button class="stake-btn" onclick="handleBet('${gid}','${team.replace(/'/g,"\\'")}',${s});this.disabled=true">€${s}</button>`).join('')}
-        </div>`;
+        const amt=isHighStakes?2:1;
+        return `<button class="bet-btn" onclick="handleBet('${gid}','${team.replace(/'/g,"\\'")}',${amt});this.disabled=true">
+          €${amt} setzen
+        </button>`;
       };
 
       const chips=(arr,team)=>arr.map(b=>{
@@ -1553,6 +1634,55 @@ async function renderBetting(){
             return `<button class="mf-toggle" onclick="toggleFeed('${gid}')">⚽ Spielverlauf <span class="mf-chev" id="mf-chev-${gid}">▼</span></button><div id="mf-${gid}" style="display:none">${buildMatchFeed(g,h,a,false)}</div>`;
           }
           return '';
+        })()}
+        ${(()=>{
+          if(!isHighStakes||!teamsKnown) return '';
+          const gsb=allSideBets.filter(sb=>sb.game_id===gid&&sb.status!=='declined');
+          const canChallenge=betPlayer&&!locked;
+          let s=`<div class="side-bet-section"><div class="side-bet-hdr">⚔️ Seitenwetten</div>`;
+          gsb.forEach(sb=>{
+            const isMeChallenger=sb.challenger===betPlayer;
+            const isMeChallenged=sb.challenged===betPlayer;
+            let rightHtml='';
+            if(sb.status==='pending'&&isMeChallenged){
+              rightHtml=`<div style="display:flex;gap:4px">
+                <button class="stake-btn" style="padding:2px 8px;font-size:10px;background:#d1fae5;border-color:#a7f3d0;color:#065f46" onclick="handleRespondSideBet(${sb.id},'accepted')">✓ Annehmen</button>
+                <button class="stake-btn" style="padding:2px 8px;font-size:10px" onclick="handleRespondSideBet(${sb.id},'declined')">✗</button>
+              </div>`;
+            } else if(sb.status==='pending'&&isMeChallenger){
+              rightHtml=`<button class="stake-btn" style="padding:2px 8px;font-size:10px" onclick="handleCancelSideBet(${sb.id})">✗ Zurückziehen</button>`;
+            } else {
+              let pillCls=sb.status;
+              if(done&&winner&&sb.status==='accepted'){
+                const cWins=winner===sb.challenger_team;
+                if(isMeChallenger) pillCls=cWins?'win':'lose';
+                else if(isMeChallenged) pillCls=cWins?'lose':'win';
+                else pillCls=cWins?'accepted':'accepted';
+              }
+              rightHtml=`<span class="side-bet-pill ${pillCls}">${sb.status==='pending'?'Ausstehend':'Aktiv'}</span>`;
+            }
+            const challTeam=sb.challenger_team;
+            const challedTeam=challTeam===h?a:h;
+            s+=`<div class="side-bet-row">
+              <span style="color:var(--navy);font-weight:600">${sb.challenger} <span style="color:var(--gray-400);font-weight:400">vs</span> ${sb.challenged}</span>
+              <span style="color:var(--gray-400)">€${sb.amount} · ${sb.challenger} auf ${flagFor(challTeam)} ${challTeam}</span>
+              ${rightHtml}
+            </div>`;
+          });
+          if(canChallenge&&challengeFormGame===gid){
+            const others=BET_PLAYERS.filter(p=>p!==betPlayer);
+            s+=`<div class="challenge-form">
+              <select id="cf-opp-${gid}"><option value="">Gegner…</option>${others.map(p=>`<option>${p}</option>`).join('')}</select>
+              <select id="cf-team-${gid}"><option value="">Team…</option><option>${h}</option><option>${a}</option></select>
+              <select id="cf-amt-${gid}">${[2,3,4,5].map(n=>`<option value="${n}">€${n}</option>`).join('')}</select>
+              <button class="stake-btn" style="padding:4px 10px" onclick="handleSubmitChallenge('${gid}')">Senden</button>
+              <button class="stake-btn" style="padding:4px 10px" onclick="closeChallengeForm()">✗</button>
+            </div>`;
+          } else if(canChallenge){
+            s+=`<button class="challenge-btn" onclick="openChallengeForm('${gid}')">＋ Jemanden herausfordern</button>`;
+          }
+          s+=`</div>`;
+          return s;
         })()}
       </div>`;
     };

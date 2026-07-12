@@ -377,6 +377,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .ceremony-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:.12em;color:var(--gold);line-height:1;margin-bottom:.25rem;}
 .ceremony-team{font-size:26px;font-weight:800;color:#fff;margin-bottom:.15rem;}
 .ceremony-owner{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:2rem;}
+.ceremony-winner-name{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.1em;margin-top:.1rem;}
+.ceremony-winner-block{text-align:center;}
 .ceremony-podium{display:flex;justify-content:center;gap:.75rem;align-items:flex-end;margin-bottom:1.5rem;}
 .cp-pos{text-align:center;border-radius:10px;padding:.6rem .75rem .75rem;background:rgba(255,255,255,.05);min-width:80px;}
 .cp-pos.p1{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);padding:.9rem .75rem 1rem;order:2;}
@@ -729,7 +731,7 @@ function renderBoard(){
     const finalDone=gamesCache.some(g=>g.type==='final'&&String(g.finished).toUpperCase()==='TRUE');
     if(finalDone){
       const pl=calcBettingPL(gamesCache);
-      lbCeremonyEl.innerHTML=buildCeremonyHtml(pl,wcWinnerInfo(),gamesCache);
+      lbCeremonyEl.innerHTML=buildCeremonyHtml(pl,wcWinnerInfo(),gamesCache,true);
     } else {
       lbCeremonyEl.innerHTML='';
     }
@@ -1464,7 +1466,7 @@ function setBetPlayer(name){
   renderBetting();
 }
 
-function buildCeremonyHtml(pl, wc, games){
+function buildCeremonyHtml(pl, wc, games, showPts=false){
   const tidMap={};
   games.filter(g=>g.type==='group').forEach(g=>{
     const h=g.home_team_name_en||g.home_team_en||null;
@@ -1480,7 +1482,7 @@ function buildCeremonyHtml(pl, wc, games){
   const wcTeam=hs>as_?h:(as_>hs?a:(hp>ap?h:(ap>hp?a:null)));
   if(!wcTeam) return '';
 
-  const sorted=BET_PLAYERS.map(p=>({name:p,net:pl[p]?.net||0})).sort((a,b)=>b.net-a.net);
+  const sorted=[...S.players].map(p=>({name:p.name,pts:calcPlayerPts(p),color:p.color})).sort((a,b)=>b.pts-a.pts);
   const medals=['🥇','🥈','🥉'];
   const colors=['#f5c518','#ef4444','#22c55e','#3b82f6','#a855f7','#f97316','#ec4899','#ffffff','#14b8a6','#64748b'];
 
@@ -1495,35 +1497,58 @@ function buildCeremonyHtml(pl, wc, games){
     confetti+=`<div class="cp" style="left:${left}%;background:${c};width:${sz}px;height:${sz}px;animation-duration:${dur}s;animation-delay:-${delay}s;"></div>`;
   }
 
-  // Podium (top 3)
-  const podium=sorted.slice(0,3).map((p,i)=>`
-    <div class="cp-pos p${i+1}">
+  // Section 1: Weltmeister winner (who had the WC team in their draft)
+  const wcOwnerColor=wc?.owner?PLAYER_COLORS[wc.owner]||'#f5c518':'#f5c518';
+  const wcSection=wc?.owner?`
+    <div class="ceremony-winner-block">
+      <div class="ceremony-trophy">🏆</div>
+      <div class="ceremony-eyebrow">Weltmeister 2026</div>
+      <div class="ceremony-title">${flagFor(wcTeam)} ${wcTeam}</div>
+      <div class="ceremony-eyebrow" style="margin-top:1.2rem;margin-bottom:.4rem;font-size:.75rem">Tipp-Gewinner</div>
+      <div class="ceremony-winner-name" style="color:${wcOwnerColor}">${wc.owner}</div>
+    </div>`:`
+    <div class="ceremony-winner-block">
+      <div class="ceremony-trophy">🏆</div>
+      <div class="ceremony-eyebrow">Weltmeister 2026</div>
+      <div class="ceremony-title">${flagFor(wcTeam)} ${wcTeam}</div>
+    </div>`;
+
+  // Section 2: either points leaderboard (leaderboard tab) or betting P&L (bets tab)
+  const podium=sorted.slice(0,3).map((p,i)=>{
+    const val=showPts?`${p.pts} pts`:`${(pl[p.name]?.net||0)>=0?'+':''}€${(pl[p.name]?.net||0).toFixed(2)}`;
+    return `<div class="cp-pos p${i+1}">
       <span class="cp-medal">${medals[i]}</span>
       <div class="cp-name">${p.name}</div>
-      <div class="cp-net">${p.net>=0?'+':''}€${p.net.toFixed(2)}</div>
-    </div>`).join('');
+      <div class="cp-net">${val}</div>
+    </div>`;
+  }).join('');
 
-  // Rest
-  const rest=sorted.slice(3).map((p,i)=>`
-    <div class="ceremony-row">
+  const rest=sorted.slice(3).map((p,i)=>{
+    const val=showPts?`${p.pts} pts`:`${(pl[p.name]?.net||0)>=0?'+':''}€${(pl[p.name]?.net||0).toFixed(2)}`;
+    return `<div class="ceremony-row">
       <span class="ceremony-row-rank">${i+4}</span>
-      <span class="ceremony-row-dot" style="background:${PLAYER_COLORS[p.name]||'#888'}"></span>
+      <span class="ceremony-row-dot" style="background:${PLAYER_COLORS[p.name]||p.color||'#888'}"></span>
       <span class="ceremony-row-name">${p.name}</span>
-      <span class="ceremony-row-val">${p.net>=0?'+':''}€${p.net.toFixed(2)}</span>
-    </div>`).join('');
+      <span class="ceremony-row-val">${val}</span>
+    </div>`;
+  }).join('');
 
-  const ownerLine=wc?.owner?`→ ${wc.owner} gewinnt €50`:'';
+  const section2label=showPts?'Punkte-Champion':'Wett-Ergebnis';
+  const section2icon=showPts?'⭐':'💶';
+
+  const section2=`
+    <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
+      <div class="ceremony-trophy">${section2icon}</div>
+      <div class="ceremony-eyebrow">${section2label}</div>
+      <div class="ceremony-podium">${podium}</div>
+      <div class="ceremony-rest">${rest}</div>
+    </div>`;
 
   return `<div class="ceremony">
     <div class="ceremony-confetti">${confetti}</div>
     <div class="ceremony-inner">
-      <div class="ceremony-trophy">🏆</div>
-      <div class="ceremony-eyebrow">Weltmeister 2026</div>
-      <div class="ceremony-title">${flagFor(wcTeam)} ${wcTeam}</div>
-      <div class="ceremony-owner">${ownerLine}</div>
-      <div class="ceremony-eyebrow" style="margin-bottom:1rem">Wett-Ergebnis</div>
-      <div class="ceremony-podium">${podium}</div>
-      <div class="ceremony-rest">${rest}</div>
+      ${wcSection}
+      ${section2}
     </div>
   </div>`;
 }

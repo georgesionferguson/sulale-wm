@@ -1338,8 +1338,7 @@ async function handleBet(gameId,team,stake){
     if(existing&&existing.team===team&&(existing.stake||1)===(stake||1)) await deleteBetRow(gameId,betPlayer);
     else await saveBetRow(gameId,betPlayer,team,stake||1);
   }catch(e){
-    const msg=e.message.includes('schema cache')?'Datenbank noch nicht bereit — bitte kurz warten und nochmal versuchen.':'Fehler beim Speichern: '+e.message;
-    alert(msg);
+    alert('Fehler: '+e.message);
   }
   renderBetting();
 }

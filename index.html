@@ -1245,18 +1245,22 @@ function calcBettingPL(games){
       return;
     }
 
-    // Activated: commit €1 per bet
-    gb.forEach(b=>{if(pl[b.player]){pl[b.player].placed++;pl[b.player].net-=1;}});
+    // Activated: count as placed (shows "X aktiv"), but don't deduct until result is known
+    gb.forEach(b=>{if(pl[b.player]){pl[b.player].placed++;}});
 
-    // Finished: pay out winners
+    // Finished: deduct stake and pay out winners
     if(String(g.finished).toUpperCase()==='TRUE'){
+      gb.forEach(b=>{if(pl[b.player]){pl[b.player].net-=1;}});
       const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
-      const winner=hs>as_?h:a;
+      const hp=parseInt(g.home_penalty_score)||0, ap=parseInt(g.away_penalty_score)||0;
+      const winner=hs>as_?h:(as_>hs?a:(hp>ap?h:(ap>hp?a:null)));
       const total=hB.length+aB.length;
-      const wB=winner===h?hB:aB;
-      wB.forEach(b=>{
-        if(pl[b.player]){const gain=total/wB.length;pl[b.player].won+=gain;pl[b.player].net+=gain;}
-      });
+      if(winner){
+        const wB=winner===h?hB:aB;
+        wB.forEach(b=>{
+          if(pl[b.player]){const gain=total/wB.length;pl[b.player].won+=gain;pl[b.player].net+=gain;}
+        });
+      }
     }
   });
   return pl;
@@ -1413,7 +1417,8 @@ async function renderBetting(){
       const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
       const activated=teamsKnown&&hB.length>0&&aB.length>0;
       const total=hB.length+aB.length;
-      const winner=done&&teamsKnown?hs>as_?h:a:null;
+      const hp2=parseInt(g.home_penalty_score)||0, ap2=parseInt(g.away_penalty_score)||0;
+      const winner=done&&teamsKnown?(hs>as_?h:(as_>hs?a:(hp2>ap2?h:(ap2>hp2?a:null)))):null;
       const ko=fixtureLocalToDate(g);
       const isLive=!done&&(String(g.time_elapsed).toLowerCase()==='live'||(ko&&Date.now()>=ko.getTime()));
 

@@ -1542,7 +1542,7 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
   const georgeJoke='In last place, George — the most emotionally invested person in this group, which somehow made it worse.';
   const woodenSpoon=showPts&&ptsLast?.name==='George'?`
     <div class="ceremony-wooden-spoon">
-      <span>🥄</span> ${georgeJoke}
+      ${georgeJoke}
     </div>`:'';
 
   const section2=showPts?`

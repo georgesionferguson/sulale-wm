@@ -1556,51 +1556,57 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
   if(showPts){
     const done=games.filter(g=>String(g.finished).toUpperCase()==='TRUE');
 
-    // Total goals
-    const totalGoals=done.reduce((s,g)=>(parseInt(g.home_score)||0)+(parseInt(g.away_score)||0)+s,0);
-
-    // Highest scoring game
-    const highGame=done.reduce((best,g)=>{
-      const t=(parseInt(g.home_score)||0)+(parseInt(g.away_score)||0);
-      return t>(best?.t||0)?{g,t}:best;
-    },null);
-    const hgH=(tidMap[highGame?.g?.home_team_id]||'?'),hgA=(tidMap[highGame?.g?.away_team_id]||'?');
-    const hgLine=highGame?`${hgH} ${highGame.g.home_score}–${highGame.g.away_score} ${hgA} (${highGame.t} goals)`:'';
-
-    // Goals per team
-    const tGoals={};
+    // Goals scored/conceded per team
+    const tGoals={},tConceded={};
     done.forEach(g=>{
-      if(g.home_team_id&&g.home_team_id!=='0') tGoals[g.home_team_id]=(tGoals[g.home_team_id]||0)+(parseInt(g.home_score)||0);
-      if(g.away_team_id&&g.away_team_id!=='0') tGoals[g.away_team_id]=(tGoals[g.away_team_id]||0)+(parseInt(g.away_score)||0);
+      const h=g.home_team_id,a=g.away_team_id;
+      const hs=parseInt(g.home_score)||0,as_=parseInt(g.away_score)||0;
+      if(h&&h!=='0'){tGoals[h]=(tGoals[h]||0)+hs;tConceded[h]=(tConceded[h]||0)+as_;}
+      if(a&&a!=='0'){tGoals[a]=(tGoals[a]||0)+as_;tConceded[a]=(tConceded[a]||0)+hs;}
     });
 
-    // Top scoring draft player (combined goals of all their teams)
-    const draftGoals={};
+    // Furthest stage reached per team
+    const stageRank={group:1,r16:2,qf:3,sf:4,third:5,final:6};
+    const teamStage={};
+    done.forEach(g=>{
+      const r=stageRank[g.type]||0;
+      [g.home_team_id,g.away_team_id].forEach(tid=>{if(tid&&tid!=='0') teamStage[tid]=Math.max(teamStage[tid]||0,r);});
+    });
+    const stageLabel={1:'group stage',2:'Round of 16',3:'quarter-final',4:'semi-final',5:'third place',6:'the final'};
+
+    // Per-player aggregates
+    const draftGoals={},draftConceded={},draftStage={},draftPens={};
     S.players.forEach(p=>{
       (p.countries||[]).forEach(c=>{
         const tid=Object.entries(tidMap).find(([,n])=>n===c)?.[0];
-        if(tid) draftGoals[p.name]=(draftGoals[p.name]||0)+(tGoals[tid]||0);
+        if(!tid) return;
+        draftGoals[p.name]=(draftGoals[p.name]||0)+(tGoals[tid]||0);
+        draftConceded[p.name]=(draftConceded[p.name]||0)+(tConceded[tid]||0);
+        draftStage[p.name]=Math.max(draftStage[p.name]||0,teamStage[tid]||0);
       });
     });
-    const topDraft=Object.entries(draftGoals).sort((a,b)=>b[1]-a[1])[0];
-
-    // Leakiest defense
-    const tConceded={};
-    done.forEach(g=>{
-      if(g.home_team_id&&g.home_team_id!=='0') tConceded[g.home_team_id]=(tConceded[g.home_team_id]||0)+(parseInt(g.away_score)||0);
-      if(g.away_team_id&&g.away_team_id!=='0') tConceded[g.away_team_id]=(tConceded[g.away_team_id]||0)+(parseInt(g.home_score)||0);
+    // Penalty drama — count shootout games per player
+    done.filter(g=>(parseInt(g.home_penalty_score)||0)+(parseInt(g.away_penalty_score)||0)>0).forEach(g=>{
+      [g.home_team_id,g.away_team_id].forEach(tid=>{
+        if(!tid||tid==='0') return;
+        const c=tidMap[tid];
+        S.players.forEach(p=>{if((p.countries||[]).includes(c)) draftPens[p.name]=(draftPens[p.name]||0)+1;});
+      });
     });
-    const leakiest=Object.entries(tConceded).sort((a,b)=>b[1]-a[1])[0];
-    const leakiestName=leakiest?tidMap[leakiest[0]]||leakiest[0]:'';
+
+    const topGoals=Object.entries(draftGoals).sort((a,b)=>b[1]-a[1])[0];
+    const topConceded=Object.entries(draftConceded).sort((a,b)=>b[1]-a[1])[0];
+    const topStage=Object.entries(draftStage).sort((a,b)=>b[1]-a[1])[0];
+    const topPens=Object.entries(draftPens).sort((a,b)=>b[1]-a[1])[0];
 
     awardsHtml=`
     <div class="ceremony-awards">
-      <div class="ceremony-eyebrow" style="margin:2rem 0 1.2rem;border-top:1px solid rgba(255,255,255,.08);padding-top:2rem">Tournament Awards</div>
-      <div class="ca-row"><span class="ca-icon">👀</span><div><div class="ca-title">First Team Out</div><div class="ca-sub">Turkey — Safak's tournament ended before anyone had unpacked.</div></div></div>
-      <div class="ca-row"><span class="ca-icon">⚽</span><div><div class="ca-title">Total Goals Scored</div><div class="ca-sub">${totalGoals} goals across the whole tournament</div></div></div>
-      ${hgLine?`<div class="ca-row"><span class="ca-icon">💥</span><div><div class="ca-title">Highest Scoring Game</div><div class="ca-sub">${hgLine}</div></div></div>`:''}
-      ${topDraft?`<div class="ca-row"><span class="ca-icon">🎯</span><div><div class="ca-title">Most Goals (Draft)</div><div class="ca-sub">${topDraft[0]}'s teams scored ${topDraft[1]} goals combined</div></div></div>`:''}
-      ${leakiestName?`<div class="ca-row"><span class="ca-icon">🚿</span><div><div class="ca-title">Leakiest Defense</div><div class="ca-sub">${leakiestName} — conceded ${leakiest[1]} goals. An open door policy.</div></div></div>`:''}
+      <div class="ceremony-eyebrow" style="margin:2rem 0 1.2rem;border-top:1px solid rgba(255,255,255,.08);padding-top:2rem">Awards</div>
+      <div class="ca-row"><span class="ca-icon">👀</span><div><div class="ca-title">First Team Out — Safak</div><div class="ca-sub">Turkey went out before anyone had unpacked.</div></div></div>
+      ${topGoals?`<div class="ca-row"><span class="ca-icon">⚽</span><div><div class="ca-title">Goals Machine — ${topGoals[0]}</div><div class="ca-sub">Teams scored ${topGoals[1]} goals combined across the tournament.</div></div></div>`:''}
+      ${topConceded?`<div class="ca-row"><span class="ca-icon">🚿</span><div><div class="ca-title">Open Door Policy — ${topConceded[0]}</div><div class="ca-sub">Teams conceded ${topConceded[1]} goals. Defence was optional.</div></div></div>`:''}
+      ${topStage?`<div class="ca-row"><span class="ca-icon">🏃</span><div><div class="ca-title">Longest Journey — ${topStage[0]}</div><div class="ca-sub">Best team made it to ${stageLabel[topStage[1]]||'the end'}.</div></div></div>`:''}
+      ${topPens?`<div class="ca-row"><span class="ca-icon">😰</span><div><div class="ca-title">Penalty Survivor — ${topPens[0]}</div><div class="ca-sub">Teams were involved in ${topPens[1]} penalty shootout${topPens[1]>1?'s':''}.</div></div></div>`:''}
     </div>`;
   }
 

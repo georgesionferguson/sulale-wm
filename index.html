@@ -1497,7 +1497,7 @@ async function renderBetting(){
 
       const chips=(arr,team)=>arr.map(b=>{
         const cls=done&&activated?winner===team?'win':'lose':'';
-        const stakeLabel=isHighStakes&&(b.stake||1)>1?` €${b.stake||1}`:'';
+        const stakeLabel=isHighStakes?` €${b.stake||1}`:'';
         return `<span class="bet-chip ${cls}">${b.player}${stakeLabel}</span>`;
       }).join('');
 

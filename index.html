@@ -381,6 +381,12 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .ceremony-winner-block{text-align:center;}
 .ceremony-congrats{font-size:14px;color:rgba(255,255,255,.65);margin-top:.5rem;font-style:italic;letter-spacing:.03em;}
 .ceremony-wooden-spoon{margin-top:1.5rem;font-size:13px;color:rgba(255,255,255,.4);font-style:italic;padding:0 1rem;line-height:1.5;}
+.ceremony-awards{width:100%;max-width:360px;margin:0 auto;text-align:left;}
+.ca-row{display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.ca-row:last-child{border-bottom:none;}
+.ca-icon{font-size:22px;line-height:1;flex-shrink:0;margin-top:1px;}
+.ca-title{font-size:13px;font-weight:700;color:#fff;letter-spacing:.02em;}
+.ca-sub{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px;line-height:1.4;}
 .ceremony-podium{display:flex;justify-content:center;gap:.75rem;align-items:flex-end;margin-bottom:1.5rem;}
 .cp-pos{text-align:center;border-radius:10px;padding:.6rem .75rem .75rem;background:rgba(255,255,255,.05);min-width:80px;}
 .cp-pos.p1{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);padding:.9rem .75rem 1rem;order:2;}
@@ -1545,6 +1551,59 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
       ${georgeJoke}
     </div>`:'';
 
+  // Tournament awards (only on leaderboard tab)
+  let awardsHtml='';
+  if(showPts){
+    const done=games.filter(g=>String(g.finished).toUpperCase()==='TRUE');
+
+    // Total goals
+    const totalGoals=done.reduce((s,g)=>(parseInt(g.home_score)||0)+(parseInt(g.away_score)||0)+s,0);
+
+    // Highest scoring game
+    const highGame=done.reduce((best,g)=>{
+      const t=(parseInt(g.home_score)||0)+(parseInt(g.away_score)||0);
+      return t>(best?.t||0)?{g,t}:best;
+    },null);
+    const hgH=(tidMap[highGame?.g?.home_team_id]||'?'),hgA=(tidMap[highGame?.g?.away_team_id]||'?');
+    const hgLine=highGame?`${hgH} ${highGame.g.home_score}–${highGame.g.away_score} ${hgA} (${highGame.t} goals)`:'';
+
+    // Goals per team
+    const tGoals={};
+    done.forEach(g=>{
+      if(g.home_team_id&&g.home_team_id!=='0') tGoals[g.home_team_id]=(tGoals[g.home_team_id]||0)+(parseInt(g.home_score)||0);
+      if(g.away_team_id&&g.away_team_id!=='0') tGoals[g.away_team_id]=(tGoals[g.away_team_id]||0)+(parseInt(g.away_score)||0);
+    });
+
+    // Top scoring draft player (combined goals of all their teams)
+    const draftGoals={};
+    S.players.forEach(p=>{
+      (p.countries||[]).forEach(c=>{
+        const tid=Object.entries(tidMap).find(([,n])=>n===c)?.[0];
+        if(tid) draftGoals[p.name]=(draftGoals[p.name]||0)+(tGoals[tid]||0);
+      });
+    });
+    const topDraft=Object.entries(draftGoals).sort((a,b)=>b[1]-a[1])[0];
+
+    // Leakiest defense
+    const tConceded={};
+    done.forEach(g=>{
+      if(g.home_team_id&&g.home_team_id!=='0') tConceded[g.home_team_id]=(tConceded[g.home_team_id]||0)+(parseInt(g.away_score)||0);
+      if(g.away_team_id&&g.away_team_id!=='0') tConceded[g.away_team_id]=(tConceded[g.away_team_id]||0)+(parseInt(g.home_score)||0);
+    });
+    const leakiest=Object.entries(tConceded).sort((a,b)=>b[1]-a[1])[0];
+    const leakiestName=leakiest?tidMap[leakiest[0]]||leakiest[0]:'';
+
+    awardsHtml=`
+    <div class="ceremony-awards">
+      <div class="ceremony-eyebrow" style="margin:2rem 0 1.2rem;border-top:1px solid rgba(255,255,255,.08);padding-top:2rem">Tournament Awards</div>
+      <div class="ca-row"><span class="ca-icon">👀</span><div><div class="ca-title">First Team Out</div><div class="ca-sub">Turkey — Safak's tournament ended before anyone had unpacked.</div></div></div>
+      <div class="ca-row"><span class="ca-icon">⚽</span><div><div class="ca-title">Total Goals Scored</div><div class="ca-sub">${totalGoals} goals across the whole tournament</div></div></div>
+      ${hgLine?`<div class="ca-row"><span class="ca-icon">💥</span><div><div class="ca-title">Highest Scoring Game</div><div class="ca-sub">${hgLine}</div></div></div>`:''}
+      ${topDraft?`<div class="ca-row"><span class="ca-icon">🎯</span><div><div class="ca-title">Most Goals (Draft)</div><div class="ca-sub">${topDraft[0]}'s teams scored ${topDraft[1]} goals combined</div></div></div>`:''}
+      ${leakiestName?`<div class="ca-row"><span class="ca-icon">🚿</span><div><div class="ca-title">Leakiest Defense</div><div class="ca-sub">${leakiestName} — conceded ${leakiest[1]} goals. An open door policy.</div></div></div>`:''}
+    </div>`;
+  }
+
   const section2=showPts?`
     <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
       <div class="ceremony-trophy">⭐</div>
@@ -1554,6 +1613,7 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
       <div class="ceremony-podium" style="margin-top:1.5rem">${podium}</div>
       <div class="ceremony-rest">${rest}</div>
       ${woodenSpoon}
+      ${awardsHtml}
     </div>`:`
     <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
       <div class="ceremony-trophy">💶</div>

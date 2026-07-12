@@ -380,6 +380,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .ceremony-winner-name{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:.1em;margin-top:.1rem;}
 .ceremony-winner-block{text-align:center;}
 .ceremony-congrats{font-size:14px;color:rgba(255,255,255,.65);margin-top:.5rem;font-style:italic;letter-spacing:.03em;}
+.ceremony-wooden-spoon{margin-top:1.5rem;font-size:13px;color:rgba(255,255,255,.4);font-style:italic;padding:0 1rem;line-height:1.5;}
 .ceremony-podium{display:flex;justify-content:center;gap:.75rem;align-items:flex-end;margin-bottom:1.5rem;}
 .cp-pos{text-align:center;border-radius:10px;padding:.6rem .75rem .75rem;background:rgba(255,255,255,.05);min-width:80px;}
 .cp-pos.p1{background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);padding:.9rem .75rem 1rem;order:2;}
@@ -1536,9 +1537,20 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
   }).join('');
 
   const ptsChampion=sorted[0];
+  const ptsLast=sorted[sorted.length-1];
   const ptsChampionColor=PLAYER_COLORS[ptsChampion?.name]||ptsChampion?.color||'#f5c518';
+  const georgeJokes=[
+    'George finished last. His teams played hard. He just didn\'t pick any of them. 🤷',
+    'A special shoutout to George, who managed to watch every single game and still end up last. Truly an achievement. 🥄',
+    'George: came, watched, lost. The full experience. 🥄',
+    'Last place goes to George — proof that enthusiasm and knowledge are very different things. 🥄',
+  ];
+  const georgeJoke=georgeJokes[Math.floor(Math.random()*georgeJokes.length)];
+  const woodenSpoon=showPts&&ptsLast?.name==='George'?`
+    <div class="ceremony-wooden-spoon">
+      <span>🥄</span> ${georgeJoke}
+    </div>`:'';
 
-  const section2label=showPts?'Wett-Ergebnis':'Wett-Ergebnis';
   const section2=showPts?`
     <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
       <div class="ceremony-trophy">⭐</div>
@@ -1547,6 +1559,7 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
       <div class="ceremony-congrats">Glückwunsch, ${ptsChampion?.name||''}! 🏅</div>
       <div class="ceremony-podium" style="margin-top:1.5rem">${podium}</div>
       <div class="ceremony-rest">${rest}</div>
+      ${woodenSpoon}
     </div>`:`
     <div class="ceremony-winner-block" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,.1);padding-top:2rem">
       <div class="ceremony-trophy">💶</div>

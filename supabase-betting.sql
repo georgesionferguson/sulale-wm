@@ -8,6 +8,9 @@ create table if not exists sulale_bets (
   constraint sulale_bets_unique unique (game_id, player)
 );
 
+-- Migration: add stake column (run once if upgrading from initial schema)
+alter table sulale_bets add column if not exists stake integer not null default 1;
+
 -- Allow anonymous reads and writes (the anon key is already public in the app)
 alter table sulale_bets enable row level security;
 

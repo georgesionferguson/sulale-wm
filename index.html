@@ -1028,6 +1028,14 @@ function toggleFxGroup(hdr){
   try{localStorage.setItem('fx_group_open',String(willOpen));}catch(e){}
 }
 
+function toggleBetSection(hdr){
+  const body=hdr.nextElementSibling;
+  const willOpen=body.classList.contains('collapsed');
+  body.classList.toggle('collapsed',!willOpen);
+  hdr.classList.toggle('open',willOpen);
+  try{localStorage.setItem('bet_earlier_open',String(willOpen));}catch(e){}
+}
+
 // ── Standings ─────────────────────────────────────────────
 function teamName(g,side){ return g[`${side}_team_name_en`]||g[`${side}_team_en`]||g[`${side}_team`]||'TBD'; }
 
@@ -1367,7 +1375,7 @@ async function renderBetting(){
   });
 
   // Only show KO games that are either scheduled (team IDs assigned) or finished
-  const koGames=games.filter(g=>['sf','third','final'].includes(g.type)&&(g.home_team_id!=='0'||g.away_team_id!=='0'||String(g.finished).toUpperCase()==='TRUE'));
+  const koGames=games.filter(g=>g.type!=='group'&&(g.home_team_id!=='0'||g.away_team_id!=='0'||String(g.finished).toUpperCase()==='TRUE'));
   const pl=calcBettingPL(games);
   const wc=wcWinnerInfo();
   const leader=currentLeaderInfo();
@@ -1435,8 +1443,7 @@ async function renderBetting(){
   if(!koSorted.length){
     html+='<div style="text-align:center;color:var(--gray-400);padding:2rem;font-size:13px;">Knock-out-Spiele erscheinen hier sobald die Gruppenphase endet.</div>';
   } else {
-    koSorted.forEach(g=>{
-      // Resolve via ID map (KO games have no home_team_name_en, only IDs)
+    const renderBetCard=(g)=>{
       const hRaw=g.home_team_id&&g.home_team_id!=='0'?teamIdMap[g.home_team_id]||'':'';
       const aRaw=g.away_team_id&&g.away_team_id!=='0'?teamIdMap[g.away_team_id]||'':'';
       const teamsKnown=hRaw.length>0&&aRaw.length>0;
@@ -1478,13 +1485,12 @@ async function renderBetting(){
             ✓ zurückziehen${isHighStakes?` (€${myStake})`:''}
           </button>`;
         }
-        if(myBet) return ''; // already bet the other side
+        if(myBet) return '';
         if(!isHighStakes){
           return `<button class="bet-btn" onclick="handleBet('${gid}','${team.replace(/'/g,"\\'")}',1);this.disabled=true">
             €1 setzen
           </button>`;
         }
-        // SF/Final: stake picker
         return `<div class="stake-picker">
           ${[1,2,3,5].map(s=>`<button class="stake-btn" onclick="handleBet('${gid}','${team.replace(/'/g,"\\'")}',${s});this.disabled=true">€${s}</button>`).join('')}
         </div>`;
@@ -1496,7 +1502,6 @@ async function renderBetting(){
         return `<span class="bet-chip ${cls}">${b.player}${stakeLabel}</span>`;
       }).join('');
 
-      // Payout summary for finished activated games
       let payoutHtml='';
       if(done&&activated&&winner){
         if(isHighStakes){
@@ -1525,7 +1530,7 @@ async function renderBetting(){
       }
 
       const koStr=ko?ko.toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      html+=`<div class="bet-game${activated&&!done&&!isLive?' activated':''}">
+      return `<div class="bet-game${activated&&!done&&!isLive?' activated':''}">
         ${isLive?`<div class="bet-live-banner"><span class="bet-live-dot"></span>LIVE — Wetten gesperrt</div>`
           :activated&&!done?`<div class="bet-active-banner">${isHighStakes?`🔥 High-Stakes · €${matchedPot} matched`:`🔥 Wetten aktiv · €${total} im Topf`}</div>`:''}
         <div class="bet-game-hdr">
@@ -1559,7 +1564,24 @@ async function renderBetting(){
           return '';
         })()}
       </div>`;
-    });
+    };
+
+    const featuredTypes=['sf','third','final'];
+    const featuredGames=koSorted.filter(g=>featuredTypes.includes(g.type));
+    const earlierGames=koSorted.filter(g=>!featuredTypes.includes(g.type));
+
+    featuredGames.forEach(g=>{ html+=renderBetCard(g); });
+
+    if(earlierGames.length){
+      let earlyOpen=false;
+      try{earlyOpen=localStorage.getItem('bet_earlier_open')==='true';}catch(e){}
+      html+=`<div class="fx-section-hdr${earlyOpen?' open':''}" onclick="toggleBetSection(this)" style="margin-top:.5rem">
+        <span class="fx-section-title"><span class="fx-section-chevron">▶</span> Frühere Runden</span>
+        <span class="fx-section-count">${earlierGames.length} Spiele</span>
+      </div><div class="fx-section-body${earlyOpen?'':' collapsed'}">`;
+      earlierGames.forEach(g=>{ html+=renderBetCard(g); });
+      html+='</div>';
+    }
   }
   html+=potsHtml+ledgerHtml;
   el.innerHTML=html;

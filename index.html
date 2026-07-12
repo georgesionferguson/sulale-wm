@@ -1492,7 +1492,51 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
 
   const sorted=[...S.players].map(p=>({name:p.name,pts:calcPlayerPts(p),color:p.color})).sort((a,b)=>b.pts-a.pts);
   const medals=['🥇','🥈','🥉'];
-  const colors=['#f5c518','#ef4444','#22c55e','#3b82f6','#a855f7','#f97316','#ec4899','#ffffff','#14b8a6','#64748b'];
+
+  // Team colours for confetti
+  const TEAM_CONFETTI_COLORS={
+    'France':['#002395','#ffffff','#ED2939'],
+    'Brazil':['#009c3b','#FEDD00','#002776','#ffffff'],
+    'Argentina':['#74ACDF','#ffffff','#74ACDF','#ffffff'],
+    'Spain':['#c60b1e','#f1bf00','#c60b1e','#f1bf00'],
+    'Germany':['#000000','#DD0000','#FFCE00'],
+    'England':['#ffffff','#CF081F','#012169'],
+    'Portugal':['#006600','#FF0000','#ffffff'],
+    'Netherlands':['#FF6600','#ffffff','#003DA5'],
+    'Mexico':['#006847','#ffffff','#CE1126'],
+    'USA':['#002868','#BF0A30','#ffffff'],
+    'Morocco':['#C1272D','#006233','#ffffff'],
+    'Japan':['#BC002D','#ffffff'],
+    'Switzerland':['#FF0000','#ffffff'],
+    'Colombia':['#FCD116','#003087','#CE1126'],
+    'Turkey':['#E30A17','#ffffff'],
+    'Uruguay':['#5EB6E4','#ffffff','#5EB6E4','#FEDD00'],
+    'Croatia':['#FF0000','#ffffff','#003DA5'],
+    'Belgium':['#000000','#FAD301','#EF3340'],
+    'Canada':['#FF0000','#ffffff'],
+    'Australia':['#FFCD00','#00843D','#003087'],
+    'South Korea':['#CD2E3A','#003478','#ffffff'],
+    'Saudi Arabia':['#006C35','#ffffff'],
+    'Ecuador':['#FFD100','#003580','#CE1126'],
+    'Senegal':['#00853F','#FDEF42','#E31B23'],
+    'Ghana':['#006B3F','#FCD116','#EF3340','#000000'],
+    'Cameroon':['#007A5E','#CE1126','#FCD116'],
+    'Nigeria':['#008751','#ffffff'],
+    'Costa Rica':['#002B7F','#CE1126','#ffffff'],
+    'Panama':['#DA121A','#003893','#ffffff'],
+    'Honduras':['#0073CF','#ffffff'],
+    'Jamaica':['#000000','#FED100','#009B3A'],
+    'Austria':['#ED2939','#ffffff'],
+    'Czech Republic':['#D7141A','#ffffff','#11457E'],
+    'Norway':['#EF2B2D','#ffffff','#002868'],
+    'Poland':['#DC143C','#ffffff'],
+    'Ukraine':['#005BBB','#FFD500'],
+    'Iran':['#239F40','#ffffff','#DA0000'],
+    'Japan':['#BC002D','#ffffff'],
+    'Indonesia':['#CE1126','#ffffff'],
+    'New Zealand':['#000000','#CC0000','#ffffff'],
+  };
+  const colors=TEAM_CONFETTI_COLORS[wcTeam]||['#f5c518','#ef4444','#22c55e','#3b82f6','#a855f7','#f97316','#ffffff'];
 
   // Confetti
   let confetti='';

@@ -1268,24 +1268,17 @@ function calcBettingPL(games){
       const winner=hs>as_?h:(as_>hs?a:(hp>ap?h:(ap>hp?a:null)));
 
       if(g.type==='sf'||g.type==='final'){
-        // Poker-style: you can only lose/win what was matched against your stake
-        const H=hB.reduce((s,b)=>s+(b.stake||1),0);
-        const A=aB.reduce((s,b)=>s+(b.stake||1),0);
-        const matched=Math.min(H,A);
-        const hBPlayers=new Set(hB.map(b=>b.player));
-        gb.forEach(b=>{
-          if(!pl[b.player]) return;
-          const sideTot=hBPlayers.has(b.player)?H:A;
-          pl[b.player].net-=(b.stake||1)*matched/sideTot;
-        });
+        // Parimutuel: total pot split proportionally by stake among winners
+        const totalPot=gb.reduce((s,b)=>s+(b.stake||1),0);
+        gb.forEach(b=>{if(pl[b.player]){pl[b.player].net-=(b.stake||1);}});
         if(winner){
           const wB=winner===h?hB:aB;
-          const winSideTotal=winner===h?H:A;
+          const winStakeTotal=wB.reduce((s,b)=>s+(b.stake||1),0);
           wB.forEach(b=>{
             if(pl[b.player]){
-              const eff=(b.stake||1)*matched/winSideTotal;
-              pl[b.player].won+=eff*2;
-              pl[b.player].net+=eff*2;
+              const payout=(b.stake||1)/winStakeTotal*totalPot;
+              pl[b.player].won+=payout;
+              pl[b.player].net+=payout;
             }
           });
         }
@@ -1462,7 +1455,7 @@ async function renderBetting(){
       const isHighStakes=g.type==='sf'||g.type==='final';
       const hStakeTotal=hB.reduce((s,b)=>s+(b.stake||1),0);
       const aStakeTotal=aB.reduce((s,b)=>s+(b.stake||1),0);
-      const matchedPot=Math.min(hStakeTotal,aStakeTotal)*2;
+      const stakePot=hStakeTotal+aStakeTotal;
 
       let locked=!teamsKnown||done||isLive;
 
@@ -1470,7 +1463,7 @@ async function renderBetting(){
       if(done&&activated){stTxt='Abgerechnet ✓';stCls='done';}
       else if(done){stTxt='Fertig';stCls='done';}
       else if(isLive){stTxt='🔴 Live';stCls='locked';}
-      else if(activated){stTxt=isHighStakes?`Aktiv ✓ · €${matchedPot} matched`:`Aktiv ✓ · €${total}`;stCls='active';}
+      else if(activated){stTxt=isHighStakes?`Aktiv ✓ · €${stakePot} im Topf`:`Aktiv ✓ · €${total}`;stCls='active';}
       else if(locked&&teamsKnown){stTxt='Gesperrt';stCls='locked';}
 
       const myBet=betPlayer?gb.find(b=>b.player===betPlayer):null;
@@ -1505,14 +1498,13 @@ async function renderBetting(){
       if(done&&activated&&winner){
         if(isHighStakes){
           const wB=winner===h?hB:aB;
-          const winSideTotal=winner===h?hStakeTotal:aStakeTotal;
-          const matched=Math.min(hStakeTotal,aStakeTotal);
+          const winStakeTotal=wB.reduce((s,b)=>s+(b.stake||1),0);
           const payoutLines=wB.map(b=>{
-            const eff=((b.stake||1)*matched/winSideTotal);
-            return `${b.player} +€${eff.toFixed(2)}`;
+            const payout=(b.stake||1)/winStakeTotal*stakePot;
+            return `${b.player} +€${(payout-(b.stake||1)).toFixed(2)}`;
           }).join(', ');
           payoutHtml=`<div class="bet-pool-note" style="color:#16a34a;font-weight:600">
-            🏆 ${payoutLines} (Matched: €${(matched*2).toFixed(0)})
+            🏆 ${payoutLines} (Topf: €${stakePot})
           </div>`;
         } else {
           const wB=winner===h?hB:aB;
@@ -1524,14 +1516,14 @@ async function renderBetting(){
         }
       } else if(activated){
         payoutHtml=isHighStakes
-          ?`<div class="bet-pool-note">Matched: €${matchedPot} · Du kannst nur verlieren, was gegenüber steht</div>`
+          ?`<div class="bet-pool-note">Topf: €${stakePot} · Gewinner teilen anteilig nach Einsatz</div>`
           :`<div class="bet-pool-note">Topf: €${total} · Gewinner nimmt alles (anteilig)</div>`;
       }
 
       const koStr=ko?ko.toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
       return `<div class="bet-game${activated&&!done&&!isLive?' activated':''}">
         ${isLive?`<div class="bet-live-banner"><span class="bet-live-dot"></span>LIVE — Wetten gesperrt</div>`
-          :activated&&!done?`<div class="bet-active-banner">${isHighStakes?`🔥 High-Stakes · €${matchedPot} matched`:`🔥 Wetten aktiv · €${total} im Topf`}</div>`:''}
+          :activated&&!done?`<div class="bet-active-banner">${isHighStakes?`🔥 High-Stakes · €${stakePot} im Topf`:`🔥 Wetten aktiv · €${total} im Topf`}</div>`:''}
         <div class="bet-game-hdr">
           <span class="bet-stage-lbl">${g.type||'KO'}${g.group?' · '+g.group:''}${koStr?` · ${koStr}`:''}</span>
           <span class="bet-status ${stCls}">${stTxt}</span>

@@ -1539,7 +1539,7 @@ function buildCeremonyHtml(pl, wc, games, showPts=false){
   const ptsChampion=sorted[0];
   const ptsLast=sorted[sorted.length-1];
   const ptsChampionColor=PLAYER_COLORS[ptsChampion?.name]||ptsChampion?.color||'#f5c518';
-  const georgeJoke='In last place, George — the most emotionally invested person in this group, which somehow made it worse.';
+  const georgeJoke='In last place, George — the most emotionally invested person in this group, which somehow makes it worse.';
   const woodenSpoon=showPts&&ptsLast?.name==='George'?`
     <div class="ceremony-wooden-spoon">
       ${georgeJoke}

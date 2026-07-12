@@ -1570,18 +1570,18 @@ async function renderBetting(){
     const featuredGames=koSorted.filter(g=>featuredTypes.includes(g.type));
     const earlierGames=koSorted.filter(g=>!featuredTypes.includes(g.type));
 
-    featuredGames.forEach(g=>{ html+=renderBetCard(g); });
-
     if(earlierGames.length){
       let earlyOpen=false;
       try{earlyOpen=localStorage.getItem('bet_earlier_open')==='true';}catch(e){}
-      html+=`<div class="fx-section-hdr${earlyOpen?' open':''}" onclick="toggleBetSection(this)" style="margin-top:.5rem">
+      html+=`<div class="fx-section-hdr${earlyOpen?' open':''}" onclick="toggleBetSection(this)" style="margin-bottom:.5rem">
         <span class="fx-section-title"><span class="fx-section-chevron">▶</span> Frühere Runden</span>
         <span class="fx-section-count">${earlierGames.length} Spiele</span>
       </div><div class="fx-section-body${earlyOpen?'':' collapsed'}">`;
       earlierGames.forEach(g=>{ html+=renderBetCard(g); });
       html+='</div>';
     }
+
+    featuredGames.forEach(g=>{ html+=renderBetCard(g); });
   }
   html+=potsHtml+ledgerHtml;
   el.innerHTML=html;

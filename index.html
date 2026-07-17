@@ -340,6 +340,19 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .bet-status.done{color:rgba(255,255,255,.3);}
 .bet-game.activated{border:2px solid var(--gold);box-shadow:0 0 0 3px rgba(245,197,24,.15),var(--shadow);}
 .bet-game.activated .bet-game-hdr{background:linear-gradient(90deg,var(--navy) 0%,#2a1f00 100%);}
+.bet-game.final-game{position:relative;border:2px solid var(--gold);box-shadow:0 0 0 4px rgba(245,197,24,.16),0 10px 30px rgba(245,197,24,.28),var(--shadow);background:linear-gradient(180deg,#fffbe9 0%,var(--white) 160px);}
+.bet-game.final-game::after{content:'🏆';position:absolute;right:-10px;bottom:-22px;font-size:100px;line-height:1;opacity:.07;pointer-events:none;transform:rotate(-10deg);}
+.bet-game.final-game .bet-game-hdr{background:linear-gradient(90deg,#1a1400 0%,var(--navy) 45%,#2a1f00 100%);position:relative;overflow:hidden;}
+.bet-game.final-game .bet-game-hdr::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(245,197,24,.4) 50%,transparent 70%);background-size:220% 100%;animation:final-shine 4s ease-in-out infinite;}
+.bet-game.final-game .bet-stage-lbl,.bet-game.final-game .bet-status{position:relative;z-index:1;}
+.bet-game.final-game .bet-stage-lbl{color:var(--gold);font-weight:800;letter-spacing:.14em;}
+.bet-final-ribbon{background:linear-gradient(90deg,var(--gold-dim) 0%,var(--gold) 50%,var(--gold-dim) 100%);color:var(--navy);text-align:center;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.1em;padding:6px 12px;text-transform:uppercase;}
+.bet-game.final-game .bet-team{font-size:14px;color:var(--navy);}
+.bet-game.final-game .bet-score{color:var(--gold-dim);}
+.bet-game.final-game .bet-score.won{color:#b8860b;text-shadow:0 0 12px rgba(245,197,24,.4);}
+.bet-final-vs{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--gold-dim);font-family:'Bebas Neue',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;}
+.bet-final-vs .trophy{font-size:20px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));}
+@keyframes final-shine{0%{background-position:220% 0;}100%{background-position:-220% 0;}}
 .bet-live-banner{background:#dc2626;color:#fff;text-align:center;font-size:11px;font-weight:800;padding:5px 14px;display:flex;align-items:center;justify-content:center;gap:6px;}
 .bet-live-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1s infinite;flex-shrink:0;}
 .bet-live-vs{font-size:10px;font-weight:800;color:#dc2626;letter-spacing:.06em;}
@@ -1738,6 +1751,7 @@ async function renderBetting(){
       const ko=fixtureLocalToDate(g);
       const isLive=!done&&(String(g.time_elapsed).toLowerCase()==='live'||(ko&&Date.now()>=ko.getTime()));
       const isHighStakes=g.type==='sf'||g.type==='final'||g.type==='third';
+      const isFinalGame=g.type==='final';
       const hStakeTotal=hB.reduce((s,b)=>s+(b.stake||1),0);
       const aStakeTotal=aB.reduce((s,b)=>s+(b.stake||1),0);
       const stakePot=hStakeTotal+aStakeTotal;
@@ -1802,11 +1816,12 @@ async function renderBetting(){
       }
 
       const koStr=ko?ko.toLocaleString('de-DE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      return `<div class="bet-game${activated&&!done&&!isLive?' activated':''}">
+      return `<div class="bet-game${activated&&!done&&!isLive?' activated':''}${isFinalGame?' final-game':''}">
+        ${isFinalGame?`<div class="bet-final-ribbon">🏆 Das WM-Finale${activated&&!done?` · €${stakePot} im Topf`:''} 🏆</div>`:''}
         ${isLive?`<div class="bet-live-banner"><span class="bet-live-dot"></span>LIVE — Wetten gesperrt</div>`
-          :activated&&!done?`<div class="bet-active-banner">${isHighStakes?`🔥 High-Stakes · €${stakePot} im Topf`:`🔥 Wetten aktiv · €${total} im Topf`}</div>`:''}
+          :activated&&!done&&!isFinalGame?`<div class="bet-active-banner">${isHighStakes?`🔥 High-Stakes · €${stakePot} im Topf`:`🔥 Wetten aktiv · €${total} im Topf`}</div>`:''}
         <div class="bet-game-hdr">
-          <span class="bet-stage-lbl">${g.type||'KO'}${g.group?' · '+g.group:''}${koStr?` · ${koStr}`:''}</span>
+          <span class="bet-stage-lbl">${isFinalGame?'🏆 Finale':(g.type||'KO')}${g.group?' · '+g.group:''}${koStr?` · ${koStr}`:''}</span>
           <span class="bet-status ${stCls}">${stTxt}</span>
         </div>
         <div class="bet-cols">
@@ -1816,7 +1831,7 @@ async function renderBetting(){
             ${betBtn(h)}
             <div class="bet-chips">${chips(hB,h)}</div>
           </div>
-          <div class="bet-vs">${isLive?'<span class="bet-live-vs">LIVE</span>':'vs'}</div>
+          <div class="bet-vs">${isLive?'<span class="bet-live-vs">LIVE</span>':isFinalGame?'<span class="bet-final-vs"><span class="trophy">🏆</span>VS</span>':'vs'}</div>
           <div class="bet-col">
             <div class="bet-team">${teamsKnown?flagFor(a)+' ':''}<span style="${!teamsKnown?'color:var(--gray-300)':''}">${a}</span></div>
             ${(done||isLive)&&teamsKnown?`<div class="bet-score${done?' '+(winner===a?'won':'lost'):' live-score'}">${as_}</div>`:''}
